@@ -9,12 +9,11 @@ Tomcat入口程序位于org.apache.catalina.startup.BootStrip
 3. 否则，采用当前目录
 
 # init
-1. 初始化classLoader。
+1. 初始化classLoader。Tomcat提供3种类加载器，分别为 commonLoader、catalinaLoader、sharedLoader,其中commonLoader是其他两种加载器的父加载器。
 
-> commonLoader、catalinaLoader、sharedLoader，其中commonLoader是其他两个加载类的父类。
-*此处的父子关系是逻辑上的父子关系，并不是类继承关系*
+    *此处的父子关系是逻辑上的父子关系，并不是类继承关系*
 
-> commonLoader生成时候首先读取conf/catalina.properties文件中commLoader.loader属性：默认为${catalina.base}/lib、${catalina.base}/lib/*.jar、${catalina.home}/lib、${catalina.home}/lib/*.jar
+2. 三种类加载器对应的路径在conf/catalina.properties指定，分别对应common.loader，server.loader，shared.loader属性。
 
 2. Thread.currentThread().setContextClassLoader(catalinaLoader)
 3. SecurityClassLoad.securityClassLoad(catalinaLoader);
