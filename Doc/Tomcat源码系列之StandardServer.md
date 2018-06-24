@@ -1,0 +1,2 @@
+在分析StandardServer时，会一次分析初始化、init、start等方法，但真正执行时的顺序则是StandardServer的init、然后是子容器(Service)的init，等所有的子容器的init方法都执行完成后才会执行StandardServer的start。
+
