@@ -1,0 +1,56 @@
+Digest解析
+    ----->StandardServer初始化
+    ----->StandardService初始化
+    ----->Connector带参数初始化(HTTP/1.1)
+         ------------->Http11NioProtocol实例化
+                     ------------> super(new NioEndpoint());
+        ？？初始化两次
+
+    ----->StandardEngine初始化
+          添加EngineConfig作为listerner
+
+    ----->StandardHost初始化
+          添加HostConfig作为listerner
+
+    ----->调用StandardEngine的addChild方法StandardHost
+    ----->调用StandardServer的addService的
+    
+getServer().init();
+    ------>StnadardServer init
+            ----->engine.init()
+                ----->ContainerBase.init
+                ```
+                BlockingQueue<Runnable> startStopQueue = new LinkedBlockingQueue<>();
+                startStopExecutor = new ThreadPoolExecutor(
+                getStartStopThreadsInternal(),
+                getStartStopThreadsInternal(), 10, TimeUnit.SECONDS,
+                startStopQueue,
+                new StartStopThreadFactory(getName() + "-startStop-"));
+                startStopExecutor.allowCoreThreadTimeOut(true);
+                super.initInternal();
+                ```
+            ----->executor.init()
+            ----->mapperListener.init()
+            ----->connector.init()
+
+bootStrip.Start()
+    ------>StnadardServer start
+            ----->engine.start()
+                ----->ContainerBase.start()
+                    ----->Realm.start()
+                    ----->子容器(Standardhost)线程启动
+                            Container children[] = findChildren();
+                            List<Future<Void>> results = new ArrayList<>();
+                            for (int i = 0; i < children.length; i++) {
+                                results.add(startStopExecutor.submit(new StartChild(children[i])));
+                            }
+                        子容器需要先调用init再调用start
+                    ----> 子容器在启动后会调用setState(LifecycleState.STARTING);
+                      ------>触发了hostconfig的start方法
+            ----->executor.start()
+            ----->mapperListener.start()
+            ----->connector.start()
+
+    ----->所有继承ContainBase的类都会通过线程池FtureTask启动
+    ----->StandardHost的StartInternal方法，fireEvent启动，init、start
+    ----->StandardContext的start方法： setResources(new StandardRoot(this));
