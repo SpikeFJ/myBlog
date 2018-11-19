@@ -47,16 +47,20 @@ bootStrip.Start()
                         子容器需要先调用init再调用start
                     ----> 子容器在启动后会调用setState(LifecycleState.STARTING);
                       ------>触发了hostconfig的start方法
-                        ------>deployApps
-                                deployDescriptors、C:\workspace\Tomcat9\conf\Catalina\localhost
-                                deployWARs、C:\workspace\Tomcat9\webapps、及下面的文件夹
-                                deployDirectories
-
-                                在加载xml的过程中会解析xml生成StandContext类，
-                                调用StandardHost的addchild方法
+                        ------>deployApps，分为3种类型的部署
+                                 在加载xml的过程中会解析xml生成StandContext类，
+                                 调用StandardHost的addchild方法
                                     ---->调用StandardContext的start方法
                                         ----->setResources(new StandardRoot(this));
                                         ----->resourcesStart
+
+                                deployDescriptors
+                                        
+                                deployWARs
+                                        、C:\workspace\Tomcat9\webapps、及下面的文件夹
+                                deployDirectories
+
+                               
             ----->executor.start()
             ----->mapperListener.start()
             ----->connector.start()
