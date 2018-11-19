@@ -68,3 +68,4 @@ bootStrip.Start()
     ----->所有继承ContainBase的类都会通过线程池FtureTask启动
     ----->StandardHost的StartInternal方法，fireEvent启动，init、start
     ----->StandardContext的start方法： setResources(new StandardRoot(this));
+	
