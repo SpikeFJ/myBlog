@@ -119,7 +119,8 @@ AssemblyInstaller assemblyInstaller = new AssemblyInstaller(serviceFileName, cmd
 transactedInstaller.Installers.Add(assemblyInstaller);
 transactedInstaller.Install(new System.Collections.Hashtable());
   ```
-ps:实际上installutil.exe也是利用transactedinstaller、assemblyinstaller等类实现的
+ps:实际上installutil.exe也是利用transactedinstaller、assemblyinstaller等类实现的<br>
+
   3. 运行服务
   ```
  ServiceController service = new ServiceController(serviceName);
