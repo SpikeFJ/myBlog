@@ -17,3 +17,4 @@ git config --global color.ui true
 参考资料
 - [一张图看明白Git的四个区五种状态](https://geektutu.com/post/git-four-areas-five-states.html)
 - [团队合作必备的Git操作](https://segmentfault.com/a/1190000015676846)
+- [git权威指南](https://git-scm.com/book/zh/v2)
