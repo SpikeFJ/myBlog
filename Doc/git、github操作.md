@@ -6,8 +6,17 @@
 git config --global user.name "用户名"
 git config --global user.email "邮箱"
 ```
+2.查看已有配置
+```
+git config --list
 
+git config user.name
+```
 
+3.查看帮助
+```
+git help config
+```
 2. 设置颜色高亮
 ```
 git config --global color.ui true
@@ -33,6 +42,15 @@ d%Creset	%s	%Cgreen(%cr)	%C(bold	blue)<%an>%Creset'	--abbrev-commit	--date=relat
 git	config	--global	color.ui	true//着色
 git	config	--global	core.quotepath	false	#	设置显示中文文件名
 ```
+
+git	diff 只能比较当前文件(workspace)和暂存区(index)
+
+git	diff	<$id1>	<$id2>			#	比较两次提交之间的差异
+
+git	diff	<branch1>..<branch2>	#	在两个分支之间比较
+
+git	diff	--staged			#	比较暂存区和版本库差异
+
 参考资料
 - [一张图看明白Git的四个区五种状态](https://geektutu.com/post/git-four-areas-five-states.html)
 - [团队合作必备的Git操作](https://segmentfault.com/a/1190000015676846)
