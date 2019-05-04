@@ -23,7 +23,7 @@ ps:
 
     *此处的父子关系是逻辑上的父子关系，并不是类继承关系*
 
-2. 类加载器路径在conf/catalina.properties指定，分别对应common.loader，server.loader，shared.loader属性。
+     类加载器路径在conf/catalina.properties指定，分别对应common.loader，server.loader，shared.loader属性。
 
 2. Thread.currentThread().setContextClassLoader(catalinaLoader)
 3. SecurityClassLoad.securityClassLoad(catalinaLoader);
