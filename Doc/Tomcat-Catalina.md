@@ -8,7 +8,6 @@ Tomcat本质是一个Web容器，所有Container接口作为所有容器的基�
 
 如Server调用init，会依次执行Service、conncetor、Enginer、Host、Content、Wrap等类的init方法。
 
-
 # load
 由于对JMS相关不是很了解，所以如initNaming等方法暂时忽略，关注整体流程
 
@@ -36,12 +35,15 @@ Runtime.getRuntime().removeShutdownHook(shutdownHook);
  s.destroy();
 ```
 
-3. 阻塞等待。
+3. 阻塞等待。await调用StandardServer的await方法 
+    ```java
+    //await变量在bootStrip中置为true
+    if (await) {
+        await();
+        stop();
+    }
+    ```
 
-    await调用StandardServer的await方法
-```java
-if (await) {
-            await();
-            stop();
-        }
-```
+# TODO
+* StringManger分析
+* JavaXml、setSecurityProtection
