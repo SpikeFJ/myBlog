@@ -23,11 +23,12 @@ ps:
 
     *此处的父子关系是逻辑上的父子关系，并不是类继承关系*
 
-2. 类加载器路径在conf/catalina.properties指定，分别对应common.loader，server.loader，shared.loader属性。
+     类加载器路径在conf/catalina.properties指定，分别对应common.loader，server.loader，shared.loader属性。
 
 2. Thread.currentThread().setContextClassLoader(catalinaLoader)
 3. SecurityClassLoad.securityClassLoad(catalinaLoader);
 4. 反射调用org.apache.catalina.startup.Catalina的setParentClassLoader为sharedLoader
+    > 为什么不是((Catalina)newInstance).setParentClassLoader
 5. catalinaDaemon为Catalina(Catalina构造函数会调用setSecurityProtection进行安全等相关设置)
 
 # 开始
@@ -46,4 +47,4 @@ ps:
 
 ### TODO
 * Jdk日志库、Tomcat日志库
-* 类加载机制
+* 类加载机制、UrlClassloader

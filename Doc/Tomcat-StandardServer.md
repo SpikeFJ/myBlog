@@ -46,6 +46,7 @@ synchronized (servicesLock) {
 - port=-1
     - awaitThread=当前线程，每隔1s检测stopAwait变量
 - port = 8005
+    - 新建ServerSocket，监听8005端口，阻塞在accept方法上
     - accept，超时时间10s
     - 默认shutdown命令=“SHUTDOWN”，但为了防止DoS，如果shutdown命令>1024,截取1024个字符,做匹配。
 ***
@@ -54,4 +55,9 @@ synchronized (servicesLock) {
 - 调用StandardService的stop
 - stopAwait，关闭监听socket
 ***
+
+# TODO
+* JMX
+* PropertyChangeSupport
+* init中ExtensionValidator.addSystemResource是什么？
 
