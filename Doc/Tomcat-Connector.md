@@ -18,5 +18,9 @@ AbstractProtocol包含两个重要属性<br>
 
 
 Endpoint中包含Acceptor、Poller
-Poller处理完调用Process的Run方法
+Poller处理完调用SocketProcessor的doRun方法
+doRun方法中调用GetHandler.Process，GetHandler是外部类AbstractEndPoint的方法
+ConnectionHandler作为实现类
+调用Http11Process的process方法
+
 Process调用ProtocolHandler.connectionhandler的process方法
