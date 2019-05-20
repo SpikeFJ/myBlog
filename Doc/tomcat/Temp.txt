@@ -94,3 +94,21 @@ punch hole 程序分为两部分：服务端，客户端
 4、客户端A告诉服务端：让客户端B用端口12345连接
 HostA:1111-------->RouteA:1.1.1.1:9676------------>Server:5555<-------------------RouteB:2.2.2.2:6573<---------------HostB:2222
 1、A:1111--->2.2.2.2:6573
+
+UserA :1.1.1.11:1234
+RouteA:1.1.1.1:4321
+UserB :2.2.2.22:5678
+RouteB:2.2.2.2：8765
+Server:3.3.3.3:30000
+
+1、UserA登录Server，(此时Server检测到UserA的Ip端口是RouteA)
+    1)Server通知UserA，当前所有在线终端
+    2)Serer通知其他在线终端，UserA在线
+
+2、UserB同步骤1
+3、PunchHole（A--->B)
+   1)UserA向Server请求PunchHole UserB
+     1.1)Server通知UserB，UserA想PunchHole
+     1.2)UserB接受到Server，UserA想PunchHole，UserB-->UserA，此时会失败，因为UserB发送给RouteA，RouteA不知道转给谁。
+
+   2)UserA--->UserB发送连接测试
