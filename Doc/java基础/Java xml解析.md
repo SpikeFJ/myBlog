@@ -3,7 +3,7 @@
 
 #  一 背景
 ## 1.1 DOM(Document Object Model)和SAX(Simple API for XML)
-![xml1](../Resource/java-xml-1.png)
+![xml1](../../Resource/java-xml-1.png)
 
 应用程序通过API调用实际的XML解析器来解析xml文档，常用的XML解析器，如Apache的Xerces
 
@@ -20,7 +20,7 @@ org.xml.sax.XmlReader reader = new apache.xerces.parsers.SaxParser();
 由此产生了JAXP。
 
 ## 1.2 JAXP(Java API for XML Processing)
-![xml2](../Resource/java-xml-2.png)
+![xml2](../../Resource/java-xml-2.png)
 
 
 JAXP只是在原有的org.w3c.dom和org.xml.sax之上做了一层封装，<br>

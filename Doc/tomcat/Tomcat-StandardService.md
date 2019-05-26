@@ -4,7 +4,11 @@
 * Engine
 * Connector
 
-一个Service由多个Connector和一个Engine组成
+一个Service由多个Connector和一个Engine组成，结构如下
+
+<br>
+
+![service结构](../../Resource/Tomcat-1.png)
 
 # init
 ```
