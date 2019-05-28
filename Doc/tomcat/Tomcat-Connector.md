@@ -682,7 +682,13 @@ public SocketState process(SocketWrapperBase<S> wrapper, SocketEvent status) {
 
 1.Procesor对象在AbstractHttp11Protocol的createProcessor中生成<br>
 2.AbstractProcessor初始化时，构造函数有3个:EndPoint,new Req,new Resp
-3.
+
+* Request
+
+
+* Response
+
+
 ```java
  public SocketState process(SocketWrapperBase<?> socketWrapper, SocketEvent status)
             throws IOException {
@@ -734,6 +740,8 @@ public SocketState process(SocketWrapperBase<S> wrapper, SocketEvent status) {
     }
 ```
 //TODO 明天继续看Process中的service方法，晚安。
+Processor另起一篇
+[Tomcat之HttpProcessor](Tomcat-Connector-Httpprocessor.md)
 
 # 2.Adapter
 
