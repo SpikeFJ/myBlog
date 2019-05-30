@@ -6,6 +6,8 @@
 * [Tomcat源码系列4之Service](Doc/tomcat/Tomcat-StandardService.md)
 * [Tomcat源码系列5之Connector](Doc/tomcat/Tomcat-Connector.md)
 * [Tomcat源码系列6之HttpProcessor](Doc/tomcat/omcat-Connector-Httpprocessor.md)
+* [Tomcat源码系列7之Adapter](Doc/tomcat/Tomcat-Adapter.md)
+
 ## Junit 3.8 源码系列
 
 ***
