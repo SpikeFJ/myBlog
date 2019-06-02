@@ -1,4 +1,4 @@
-<-----------------------------Tomcat流程------------------>
+<-----------------------------digest解析生成对象及初始化------------------>
 Digest解析
     ----->StandardServer初始化
     ----->StandardService初始化
@@ -15,7 +15,8 @@ Digest解析
 
     ----->调用StandardEngine的addChild方法StandardHost
     ----->调用StandardServer的addService的
-    
+
+<-----------------------------init------------------>
 getServer().init();
     ------>StnadardServer init
             ----->engine.init()
@@ -33,7 +34,7 @@ getServer().init();
             ----->executor.init()
             ----->mapperListener.init()
             ----->connector.init()
-
+<-----------------------------start------------------>
 bootStrip.Start()
     ------>StnadardServer start
             ----->engine.start()
