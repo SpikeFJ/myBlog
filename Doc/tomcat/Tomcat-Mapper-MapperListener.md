@@ -5,20 +5,59 @@ protected final MapperListener mapperListener = new MapperListener(this);
 ```
 
 # 简述
-## Mapper
+* Mapper
 > Mapper:实现了servlet API的路由规则(根据Http规则)。
 
-## MapperListener
-> 监听容器状态及容器children的变更，
-> 从类的接口继承可以看出来,既继承了ContainerListener(关注children的变更)，又继承了LifecycleListener(关注容器状态的变更)
+通俗的说就是当客户端发出请求/example/lession1/part1时，web服务器能够正确的找到对应的servlet执行，
+
+查找servlet的过程就称之为路由。(host-->context-->Warpper)
+
+* MapperListener
+
+由于用户可以随时增加一个虚拟主机(host),或者在host中增加一个应用程序(context),或者在context中增加一个servelet。
+
+当有上述操作发生时，Tomcat需要一种机制及时检测到变更、维护正确的路由规则。
+
+这就是MapperListener的作用。
+
+从MapperListener类的接口继承可以看出来,既继承了ContainerListener(关注children的变更)，又继承了LifecycleListener(关注容器状态的变更)
 ```java
 public class MapperListener extends LifecycleMBeanBase implements ContainerListener, LifecycleListener
 ```
 
+
+# Mapper层次结构
+
+Mapper采用以下层次结构搭建了针对Tomcat的路由规则：
+
+![Tomcat-Mapper结构](../../Resource/Tomcat-Mapper.png)
+---
+* MapElment是所有元素的基类。含有name(host的名称/context的路径等)和对应的泛型对象
+* MappedHost含有ContextList的集合，保存该虚拟主机下的所有context的有序集合。
+* ContextList含有MappedContext数组和nesting(所有context的path中，最多的“/”数目)
+* MappedContext包含ContextVersion数组，表示不同版本的context
+* ContextVersion 包含以下属性
+    1. path
+    2. slashCount
+    3. WebResourceRoot
+    4. welcomeResources的字符数组
+    5. defaultWrapper：默认的wrapper
+    6. exactWrappers：对wrapper的精确匹配
+    7. wildcardWrappers：基于通配符的匹配
+    8. extensionWrappers:基于扩展名的匹配
+    9. nesting
+* MappedWrapper
+    1. jspWildCard
+    2. resourceOnly
+
+好了，基本的路由结构讲完了，还是从mapper的start方法开启入口。。。
 # MapperListener
+首先分析startInternal方法，主要有以下步骤
+* 查找defaultHost，并设置mapper的defaultHost
+* 给Engine及其所有下级容器添加mapperListener监听器(这样所有的容器变更，路由规则都能及时更新)
+* 将host及其所有下级容器注册到mapper对象
 
-这里只分析下host的添加，context、wrapper的添加类似。
-
+## MapperListen.startInternal
 ```java
 public void startInternal() throws LifecycleException {
 
@@ -31,9 +70,9 @@ public void startInternal() throws LifecycleException {
 
     findDefaultHost();
 
-    //给engine及所有下级添加该监听器(递归调用)，这样所有Tomcat的组件都处于mapper的监听之下，只要有变更，都能正确的路由到。
+    //给engine及所有下级添加该监听器(递归调用)，
+    //这样所有Tomcat的组件都处于mapper的监听之下，只要有变更，都能正确的路由到。
     addListeners(engine);
-
 
     Container[] conHosts = engine.findChildren();
     for (Container conHost : conHosts) {
@@ -44,7 +83,6 @@ public void startInternal() throws LifecycleException {
         }
     }
 }
-
 //获取默认的host名称
  private void findDefaultHost() {
 
@@ -84,7 +122,18 @@ public void startInternal() throws LifecycleException {
                 defaultHost, service));
     }
 }
+private void addListeners(Container container) {
+    container.addContainerListener(this);
+    container.addLifecycleListener(this);
+    //递归下级，直至所以子容器都添加MapperListener
+    for (Container child : container.findChildren()) {
+        addListeners(child);
+    }
+}
+```
 
+### Host注册
+```java
 //注册host
 private void registerHost(Host host) {
 
@@ -124,8 +173,6 @@ public synchronized void addHost(String name, String[] aliases,
     } else {
         MappedHost duplicate = hosts[find(hosts, name)];
         if (duplicate.object == host) {
-            // The host is already registered in the mapper.
-            // E.g. it might have been added by addContextVersion()
             if (log.isDebugEnabled()) {
                 log.debug(sm.getString("mapper.addHost.sameHost", name));
             }
@@ -133,12 +180,11 @@ public synchronized void addHost(String name, String[] aliases,
         } else {
             log.error(sm.getString("mapper.duplicateHost", name,
                     duplicate.getRealHostName()));
-            // Do not add aliases, as removeHost(hostName) won't be able to
-            // remove them
             return;
         }
     }
     List<MappedHost> newAliases = new ArrayList<>(aliases.length);
+    //此处遍历所有的别名，针对别名新建host对象，感觉有点重复
     for (String alias : aliases) {
         alias = renameWildcardHost(alias);
         MappedHost newAlias = new MappedHost(alias, newHost);
@@ -163,7 +209,53 @@ private static final <T> boolean insertMap
         (oldMap, pos + 1, newMap, pos + 2, oldMap.length - pos - 1);
     return true;
 }
+
+//二分查找
+ private static final <T> int find(MapElement<T>[] map, String name) {
+
+    int a = 0;
+    int b = map.length - 1;
+
+    // Special cases: -1 and 0
+    if (b == -1) {
+        return -1;
+    }
+
+    if (name.compareTo(map[0].name) < 0) {
+        return -1;
+    }
+    if (b == 0) {
+        return 0;
+    }
+
+    int i = 0;
+    while (true) {
+        i = (b + a) / 2;
+        int result = name.compareTo(map[i].name);
+        if (result > 0) {
+            a = i;
+        } else if (result == 0) {
+            return i;
+        } else {
+            b = i;
+        }
+        if ((b - a) == 1) {
+            int result2 = name.compareTo(map[b].name);
+            if (result2 < 0) {
+                return a;
+            } else {
+                return b;
+            }
+        }
+    }
+
+}
 ```
+
+
+## Context注册
+
+## Wrapper注册
 
 上面是启动时候的一系列操作，当容器元素变更时呢?
 ```java
