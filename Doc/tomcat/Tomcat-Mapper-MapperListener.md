@@ -14,7 +14,7 @@ protected final MapperListener mapperListener = new MapperListener(this);
 
 * MapperListener
 
-由于用户可以随时增加一个虚拟主机(host),或者在host中增加一个应用程序(context),或者在context中增加一个servelet。
+由于用户可以随时增加一个虚拟主机(host),应用程序(context)或者servelet。
 
 当有上述操作发生时，Tomcat需要一种机制及时检测到变更、维护正确的路由规则。
 
