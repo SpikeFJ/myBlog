@@ -78,36 +78,122 @@ Container children[] = findChildren();
 ```
 可以看到开线程遍历所有的子容器的start方法，在调用子容器的start之前会判断状态调用init方法
 
-**重点**：在StandardHost调用start方法时，会触发setState(LifecycleState.STARTING)事件。
 
-HostConfig类作为Host对象的监听类，监听到starting事件处理逻辑如下：
 ```java
-public void lifecycleEvent(LifecycleEvent event) {
+ protected synchronized void startInternal() throws LifecycleException {
 
-        // Identify the host we are associated with
-        try {
-            host = (Host) event.getLifecycle();
-            if (host instanceof StandardHost) {
-                setCopyXML(((StandardHost) host).isCopyXML());
-                setDeployXML(((StandardHost) host).isDeployXML());
-                setUnpackWARs(((StandardHost) host).isUnpackWARs());
-                setContextClass(((StandardHost) host).getContextClass());
+        
+        logger = null;
+        getLogger();
+        //集群启动
+        Cluster cluster = getClusterInternal();
+        if (cluster instanceof Lifecycle) {
+            ((Lifecycle) cluster).start();
+        }
+        //角色启动
+        Realm realm = getRealmInternal();
+        if (realm instanceof Lifecycle) {
+            ((Lifecycle) realm).start();
+        }
+
+        //启动子容器
+        Container children[] = findChildren();
+        List<Future<Void>> results = new ArrayList<>();
+        for (int i = 0; i < children.length; i++) {
+            results.add(startStopExecutor.submit(new StartChild(children[i])));
+        }
+
+        boolean fail = false;
+        for (Future<Void> result : results) {
+            try {
+                result.get();
+            } catch (Exception e) {
+                log.error(sm.getString("containerBase.threadedStartFailed"), e);
+                fail = true;
             }
-        } catch (ClassCastException e) {
-            log.error(sm.getString("hostConfig.cce", event.getLifecycle()), e);
-            return;
+
+        }
+        if (fail) {
+            throw new LifecycleException(
+                    sm.getString("containerBase.threadedStartFailed"));
         }
 
-        // Process the event that has occurred
-        if (event.getType().equals(Lifecycle.PERIODIC_EVENT)) {
-            check();
-        } else if (event.getType().equals(Lifecycle.BEFORE_START_EVENT)) {
-            beforeStart();
-        } else if (event.getType().equals(Lifecycle.START_EVENT)) {
-            start();
-        } else if (event.getType().equals(Lifecycle.STOP_EVENT)) {
-            stop();
-        }
+        // 启动pipeline
+        if (pipeline instanceof Lifecycle)
+            ((Lifecycle) pipeline).start();
+
+        //此处会触发hostconfig对象的start方法
+        setState(LifecycleState.STARTING);
+
+        //启动后台线程
+        threadStart();
+
     }
+    
 ```
 
+threadStart启动的后台进程如下:
+```java
+protected class ContainerBackgroundProcessor implements Runnable {
+
+    @Override
+    public void run() {
+        Throwable t = null;
+        String unexpectedDeathMessage = sm.getString(
+                "containerBase.backgroundProcess.unexpectedThreadDeath",
+                Thread.currentThread().getName());
+        try {
+            while (!threadDone) {
+                try {
+                    Thread.sleep(backgroundProcessorDelay * 1000L);
+                } catch (InterruptedException e) {
+                    // Ignore
+                }
+                if (!threadDone) {
+                    processChildren(ContainerBase.this);
+                }
+            }
+        } catch (RuntimeException|Error e) {
+            t = e;
+            throw e;
+        } finally {
+            if (!threadDone) {
+                log.error(unexpectedDeathMessage, t);
+            }
+        }
+    }
+
+    protected void processChildren(Container container) {
+        ClassLoader originalClassLoader = null;
+
+        try {
+            if (container instanceof Context) {
+                Loader loader = ((Context) container).getLoader();
+                // Loader will be null for FailedContext instances
+                if (loader == null) {
+                    return;
+                }
+
+                // Ensure background processing for Contexts and Wrappers
+                // is performed under the web app's class loader
+                originalClassLoader = ((Context) container).bind(false, null);
+            }
+            container.backgroundProcess();
+            Container[] children = container.findChildren();
+            for (int i = 0; i < children.length; i++) {
+                if (children[i].getBackgroundProcessorDelay() <= 0) {
+                    processChildren(children[i]);
+                }
+            }
+        } catch (Throwable t) {
+            ExceptionUtils.handleThrowable(t);
+            log.error("Exception invoking periodic operation: ", t);
+        } finally {
+            if (container instanceof Context) {
+                ((Context) container).unbind(false, originalClassLoader);
+            }
+        }
+    }
+}
+```
+后续参见[tomcat](Tomcat-HostConfig)
