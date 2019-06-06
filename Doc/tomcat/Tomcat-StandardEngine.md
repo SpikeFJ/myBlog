@@ -96,7 +96,8 @@ Container children[] = findChildren();
             ((Lifecycle) realm).start();
         }
 
-        //启动子容器
+        //启动子容器，
+        //此处会触发hostconfig对象的start方法
         Container children[] = findChildren();
         List<Future<Void>> results = new ArrayList<>();
         for (int i = 0; i < children.length; i++) {
@@ -122,7 +123,6 @@ Container children[] = findChildren();
         if (pipeline instanceof Lifecycle)
             ((Lifecycle) pipeline).start();
 
-        //此处会触发hostconfig对象的start方法
         setState(LifecycleState.STARTING);
 
         //启动后台线程

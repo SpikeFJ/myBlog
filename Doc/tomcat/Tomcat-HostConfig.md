@@ -15,9 +15,9 @@ setContextClass(((StandardHost) host).getContextClass());
 * 检查是否文件夹：C:\workspace\Tomcat9\webapps；判断为否则DeployOnStartup，AutoDeploy设置为false
 * DeployOnStartup=true，则调用deployApps
 ```java
-//C:\workspace\Tomcat9\webapps
+//根目录下/weapps   eg:C:\workspace\Tomcat9\webapps
 File appBase = host.getAppBaseFile();
-//C:\workspace\Tomcat9\conf\Catalina\localhost
+//根目录下/conf/Catalina/localhost eg:C:\workspace\Tomcat9\conf\Catalina\localhost
 File configBase = host.getConfigBaseFile();
 String[] filteredAppPaths = filterAppPaths(appBase.list());
 // Deploy XML descriptors from configBase
@@ -205,10 +205,12 @@ ContextName的构造函数会对传入的xx.xml进行分析截取，具体步骤
                 if (!docBase.isAbsolute()) {
                     docBase = new File(host.getAppBaseFile(), context.getDocBase());
                 }
-                // If external docBase, register .xml as redeploy first
+                // 如果<Context docBase="D:/example />中的路径不是在host路径中
                 if (!docBase.getCanonicalPath().startsWith(
                         host.getAppBaseFile().getAbsolutePath() + File.separator)) {
+                    //标志为外部项目
                     isExternal = true;
+                    
                     deployedApp.redeployResources.put(
                             contextXml.getAbsolutePath(),
                             Long.valueOf(contextXml.lastModified()));
@@ -224,7 +226,7 @@ ContextName的构造函数会对传入的xx.xml进行分析截取，具体步骤
                     context.setDocBase(null);
                 }
             }
-
+            //将web项目添加到host中，此处会触发context的init-->start；而init、start之前又会触发conextConfig的事件响应
             host.addChild(context);
         } catch (Throwable t) {
             ExceptionUtils.handleThrowable(t);
@@ -295,6 +297,7 @@ ContextName的构造函数会对传入的xx.xml进行分析截取，具体步骤
             addGlobalRedeployResources(deployedApp);
         }
 
+        //加入到deployed，表示已加载完成的应用程序。
         if (host.findChild(context.getName()) != null) {
             deployed.put(context.getName(), deployedApp);
         }
@@ -305,6 +308,12 @@ ContextName的构造函数会对传入的xx.xml进行分析截取，具体步骤
         }
     }
 ```
-## deployWARs分析
+
+## 3. deployWARs分析和deployDirectories就不分析了，基础代码差不多。
 * 忽略所有META-INF、WEB-INF命名的文件夹
 * 查找C:\workspace\Tomcat9下所有.war包
+* 其他和deployDescriptor相同
+
+# 总结
+
+host主要聚焦于context的加载，初始化、启动，下面继续分析Context对象
