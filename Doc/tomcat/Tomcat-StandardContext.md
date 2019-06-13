@@ -41,8 +41,32 @@ protected void initInternal() throws LifecycleException {
 ```
 
 # start
-* 资源的初始化及启动
-* WebappLoader的初始化
-* Rfc6265CookieProcessor初始化
+* 资源StandardRoot(含class文件、jar包及其他资源文件)的初始化及启动
+* WebappLoader的初始化，启动时会创建WebappClassLoader
+* Cookie处理器Rfc6265CookieProcessor初始化
 * 初始化字符集映射
-* 
+* 初始化工作目录
+* ExtensionValidator.validateApplication
+* bindThread
+* loader.start()
+* Realm.start()
+* 通知ContextConfig处理：fireLifecycleEvent(Lifecycle.CONFIGURE_START_EVENT, null);
+> 解析Web.xml，请求映射、filter设置等操作是由ContextConfig执行的
+* child.start()
+* pipeline.start()
+* 生成Session管理器，区分是否集群：new StandardManager/getCluster().createManager
+* 将WebResourceRoot添加到ServletContext属性中
+* 创建DefaultInstanceManager，用于创建Servlet及Filter
+* 将StandardJarScanner添加到ServletContext属性中
+* mergeParameters
+* ServletContainerInitializer.onStartup()
+* 启动监听器
+* 检查未覆盖的http方法安全
+* 启动StandardManager
+* 初始化filterConfig(filterStart)
+* 对于loadOnStartup>0的wrapper，调用Wrapper.load()(loadOnStartup)
+* 启动ContainerBase的后台线程
+* WebResourceRoot.gc()释放资源
+
+StandardContext做的工作比较多，毕竟这部分才是用户直接打交道的。。。。<br>
+好吧，一个个来
