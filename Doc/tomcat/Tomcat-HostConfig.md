@@ -194,6 +194,7 @@ ContextName的构造函数会对传入的xx.xml进行分析截取，具体步骤
                 (LifecycleListener) clazz.newInstance();
             context.addLifecycleListener(listener);
             //根据xml配置context相关属性
+            //注意path属性采用的是ContextName的值，而ContextName的path是由xml文件的名称决定的，即<Context path='/XX'>会被该文件的名称所替换，
             context.setConfigFile(contextXml.toURI().toURL());
             context.setName(cn.getName());
             context.setPath(cn.getPath());
