@@ -1,4 +1,82 @@
 # 添加 
+```java
+static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;//初始化大小16
+static final int MAXIMUM_CAPACITY = 1 << 30; //最大容量2的30次方
+static final float DEFAULT_LOAD_FACTOR = 0.75f;//默认加载因子
+static final int TREEIFY_THRESHOLD = 8;//当链表个数大于此值时，转换成红黑树
+static final int UNTREEIFY_THRESHOLD = 6;//当链表个数小于此值时，分解红黑树
+static final int MIN_TREEIFY_CAPACITY = 64;
+
+//内部节点结构
+static class Node<K,V> implements Map.Entry<K,V> 
+{
+final int hash;
+final K key;
+V value;
+Node<K,V> next;
+}
+
+public HashMap() {
+this.loadFactor = DEFAULT_LOAD_FACTOR; 
+}
+public HashMap(int initialCapacity) {
+this(initialCapacity, DEFAULT_LOAD_FACTOR);
+}
+public HashMap(int initialCapacity, float loadFactor) {
+//初始化容量小于0，报错
+if (initialCapacity < 0)
+throw new IllegalArgumentException("Illegal initial capacity: " +
+initialCapacity);
+//初始化容量大于最大值，则采用最大值 
+if (initialCapacity > MAXIMUM_CAPACITY)
+initialCapacity = MAXIMUM_CAPACITY;
+//加载因子不能小于等于0或非数字
+if (loadFactor <= 0 || Float.isNaN(loadFactor))
+throw new IllegalArgumentException("Illegal load factor: " +
+loadFactor);
+this.loadFactor = loadFactor;
+this.threshold = tableSizeFor(initialCapacity);
+}
+
+//调整用户输入的容量大小，**返回大于输入参数且最近的2的整数次幂的数**
+static final int tableSizeFor(int cap) {
+int n = cap - 1;
+n |= n >>> 1;
+n |= n >>> 2;
+n |= n >>> 4;
+n |= n >>> 8;
+n |= n >>> 16;
+return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+}
+
+关于tableSizeFor方法最直观的解析是如果n=0x01000000,则
+n >>> 1--->00100000; n |= n >>> 1---->01100000,所以移位的作用是将1后面所有的位数都置为1
+0x01000000--->0x01111111
+n+1---------->0x10000000
+```
+
+## 思考
+> 为什么采用 (n - 1) & hash 这个算法来定位元素的位置
+
+添加：
+```java
+public V put(K key, V value) {
+return putVal(hash(key), key, value, false, true);
+}
+
+static final int hash(Object key) {
+int h;
+return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+}
+
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+boolean evict) {
+Node<K,V>[] tab; 
+Node<K,V> p; //p表示根据hash计算出来应该放置的位置，p有可能是链表或红黑树
+int n, i;
+if ((tab = table) == null || (n = tab.length) == 0)
+n = (tab = resize()).length;
+//p位置没有值，则直接new一个节点占位，HashMap根据 (n - 1) & hash 求
     public V put(K key, V value) {
             return putVal(hash(key), key, value, false, true);
         }
