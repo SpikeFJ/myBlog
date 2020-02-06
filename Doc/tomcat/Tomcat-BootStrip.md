@@ -9,7 +9,7 @@ Tomcat入口程序位于org.apache.catalina.startup.BootStrip
 2. 否则，如果当前目录存在bootstrap.jar文件，则用当前目录的上级目录初始化
 3. 否则，采用当前目录
 
-*catalina.home和catalina.base分别代表安装目录和工作目录，可以通过设置catalina.base来启用Tomcat多实例。*
+**catalina.home和catalina.base分别代表安装目录和工作目录，可以通过设置catalina.base来启用Tomcat多实例。**
 
 ```
 ps:

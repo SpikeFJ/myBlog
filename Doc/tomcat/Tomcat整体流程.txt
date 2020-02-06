@@ -1,3 +1,12 @@
+分析tomcat源码时，首先需要自顶而下的看待，Tomcat架构分为两部分：连接端和容器端。
+连接端启动之前需要容器先都加载准备好。，所以Tomcat先启动容器端。
+
+不管Container还是Connector都是组件，是组件都有生命周期，所以他们都实现了Lifecycle接口，Lifecycle接口
+定义了基本的init、start、stop和destroy方法，用来指代常用的阶段。
+
+
+
+
 <-----------------------------digest解析生成对象及初始化------------------>
 Digest解析
     ----->StandardServer初始化
