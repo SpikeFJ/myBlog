@@ -1,3 +1,5 @@
+
+## 6. 哈希表在java中的实现-HashMap
 # 添加 
 ```java
 static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;//初始化大小16
