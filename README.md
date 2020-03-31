@@ -13,6 +13,26 @@
 * [Tomcat源码系列10之HostConfig](Doc/tomcat/Tomcat-HostConfig.md)
 * [Tomcat源码系列11之StandardContext](Doc/tomcat/Tomcat-StandardContext.md)
 
+
+## 三. java算法与数据结构
+
+1. [算法背景介绍]
+2. [简单排序(冒泡、选择、插入)]
+3. [栈和队列]
+4. [优先级队列(解析表达式)](./Doc/java基础/data_structures_03.md)
+5. [链表(单向、双向、迭代器)]
+6. [递归]
+7. [高级排序(希尔、快速、基数)]
+8. [二叉树、哈夫曼树]
+9. [红黑树]
+10. [2-3-4树]
+11. [哈希](./Doc/java基础/data_structures_10.md)
+12. [堆](./Doc/java基础/data_structures_11.md)
+13. [图]
+14. [带权图]
+15. [总结]
+
+
 ## Junit 3.8 源码系列
 
 ## 待整理
