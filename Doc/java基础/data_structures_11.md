@@ -52,8 +52,9 @@ public class Heap {
 
     public int remove() {
         Integer root = array[0];
-        Integer lastNode = array[currentSize];
-        shitDown(currentSize);
+        array[0] = array[--currentSize];
+
+        shitDown(0);
 
         return root;
     }
