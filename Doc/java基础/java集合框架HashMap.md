@@ -62,14 +62,14 @@ n+1---------->0x10000000
 
 添加：
 ```java
-public V put(K key, V value) {
-return putVal(hash(key), key, value, false, true);
-}
+    public V put(K key, V value) {
+        return putVal(hash(key), key, value, false, true);
+    }
 
-static final int hash(Object key) {
-int h;
-return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
-}
+    static final int hash(Object key) {
+        int h;
+        return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+    }
 
 final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 boolean evict) {
