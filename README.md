@@ -1,9 +1,9 @@
 
 ## Java-Nio系列
-* [简介](./Doc/java基础/JavaNio-简介.md)
-* [缓冲区](Doc/java基础/JavaNio-缓冲区.md)
-* [通道](Doc/java基础/JavaNio-Channel.md)
-* [选择器](Doc/java基础/JavaNio-Selector.md)
+* [Java-Nio简介](./Doc/java基础/JavaNio-简介.md)
+* [Java-Nio缓冲区](Doc/java基础/JavaNio-缓冲区.md)
+* [Java-Nio通道](Doc/java基础/JavaNio-Channel.md)
+* [Java-Nio选择器](Doc/java基础/JavaNio-Selector.md)
 
 ## Tomcat源码系列
 * [Tomcat源码系列0之整体架构](Doc/tomcat/Tomcat-Structure.md)
@@ -23,12 +23,12 @@
 ## 三. java算法与数据结构
 
 1. [算法背景介绍]
-2. [简单排序(冒泡、选择、插入)]
-3. [栈和队列]
+2. [简单排序(冒泡、选择、插入)](./Doc/java基础/data_structures_01.md)
+3. [栈和队列](./Doc/java基础/data_structures_02.md)
 4. [优先级队列(解析表达式)](./Doc/java基础/data_structures_03.md)
-5. [链表(单向、双向、迭代器)]
+5. [链表(单向、双向、迭代器)](./Doc/java基础/data_structures_04.md)
 6. [递归]
-7. [高级排序(希尔、快速、基数)]
+7. [高级排序(希尔、快速、基数)](./Doc/java基础/data_structures_06.md)
 8. [二叉树、哈夫曼树]
 9. [红黑树]
 10. [2-3-4树]

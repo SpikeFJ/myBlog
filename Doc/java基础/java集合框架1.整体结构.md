@@ -1,4 +1,4 @@
-## 线程终端
+## 线程中断
 * public static boolean interrupted()
 * public boolean isInterrupted()
 * public void interrupt();
