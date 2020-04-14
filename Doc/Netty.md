@@ -22,5 +22,5 @@ eg:
 
     lengthFieldOffset   =  1;（因为长度字段前开头有一个字节的HDR1，所以需要偏移一个字节）
     lengthFieldLength   =  2;（长度字段占用Length两个字节长度）
-    lengthAdjustment    = -3;（长度字段值=0x10=16,实际长度是12，所以需要-3）
+    lengthAdjustment    = -3;（长度字段值=0x10=16,实际长度是13，所以需要-3）
     initialBytesToStrip =  3;（需要略过HDR1，Length，HDR2 3个字节）
