@@ -215,7 +215,7 @@ void shellSort() {
             }
 
         }
-        return rightPtr;
+        return leftPtr;
     }
 
     int pivot =99;
@@ -249,13 +249,14 @@ void shellSort() {
 while(leftPtr<right && value[++leftPtr]<pivot>)
 ;
 ```
-改为
+可以改为
 ```java
 while(leftPtr<right && value[leftPtr]<pivot>)
     leftPtr++;
 ```
 
 这个变动使得初始值设为`left`和`right`比原有代码更为易懂。
+但这个变动导致满足条件时指针才会移动，指针在任何情况下都应该移动，所以还是保持原状即执行空指令。
 
 ## 3.2 优化处理-相同关键字
 
@@ -344,8 +345,8 @@ int partitionIt1(int left, int right, int pivot) {
             swap(leftPtr, rightPtr);
         }
     }
-    swap(leftPtr, right);
-    return rightPtr;
+    swap(leftPtr, right);//为什么选择leftPtr,因为leftPtr已经指向右边数组的最左端元素
+    return leftPtr;
 }
 
 ```
