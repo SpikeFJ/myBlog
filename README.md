@@ -29,7 +29,7 @@
 5. [链表(单向、双向、迭代器)](./Doc/java基础/data_structures_04.md)
 6. [递归]
 7. [高级排序(希尔、快速、基数)](./Doc/java基础/data_structures_06.md)
-8. [二叉树、哈夫曼树]
+8. [二叉树、哈夫曼树](./Doc/java基础/data_structures_07.md)
 9. [红黑树]
 10. [2-3-4树]
 11. [哈希](./Doc/java基础/data_structures_10.md)
