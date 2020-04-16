@@ -31,10 +31,10 @@
 7. [高级排序(希尔、快速、基数)](./Doc/java基础/data_structures_06.md)
 8. [二叉树、哈夫曼树](./Doc/java基础/data_structures_07.md)
 9. [红黑树]
-10. [2-3-4树]
+10. [2-3-4树和外部存储]
 11. [哈希](./Doc/java基础/data_structures_10.md)
 12. [堆](./Doc/java基础/data_structures_11.md)
-13. [图]
+13. [图](./Doc/java基础/data_structures_12.md)
 14. [带权图]
 15. [总结]
 
