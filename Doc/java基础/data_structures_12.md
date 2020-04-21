@@ -319,3 +319,38 @@ public class Graph {
 
 # 四. 最小生成树
 
+用最少的边连接所有的顶点，这样就组成了**最小生成树**。
+
+下图右侧即为最小生成树：
+![最小生成树](../../Resource/data_structures_12_7.png)
+
+1. 对于给定的一组顶点，可能有多种最小生成树。
+2. 最小生成树边`E`的数量总是比顶点`V`的数量小1
+> E = V-1
+3. 不关心边的长度，只是要找最少数量的边，而不是最短路径
+
+创建最小生成树的算法和搜索算法几乎相同，本例使用深度优先搜索。
+
+下面可以看到最小生成树算法(mst)和前面看到的深度优先搜索算法之间的唯一区别就是mst必须记录走过的边。
+```java
+public void mst() {
+    while (!stack.isEmpty()) {
+        //查看栈顶元素有没有未访问的邻接点
+        int currentIndex = stack.peek();
+        int nextIndex = getUnVisited(currentIndex);
+        if (nextIndex > 0) {
+            //有则加入栈
+            vertexList[nextIndex].setVisited(true);
+            System.out.println(vertexList[nextIndex].getLabel());
+            stack.push(nextIndex);
+
+            System.out.println(currentIndex);
+            System.out.println(nextIndex);
+        } else {
+            //无则弹出
+            stack.pop();
+        }
+    }
+}
+
+```
