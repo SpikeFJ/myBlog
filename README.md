@@ -47,13 +47,13 @@
 ## 有趣的
 
 
-* [punch-hole](Doc/Punch-hole.md)
+* [punch-hole](Doc/Temp/Punch-hole.md)
 * [远程开关机](Doc/Temp/远程开关机.md)
 * [js利用零宽度字符串隐藏文件内容](Doc/Temp/javascript零宽度字符串隐藏.md)
 * 如何自己生成一个BitTorrent种子
 
 ## 工作
-* [XL工作复盘](Doc/工作.md)
+* [XL工作复盘](Doc/工作/工作.md)
 * [XL工作-框架总结]
 * [XL工作-如何设计一个插件系统]
 * [XL工作-ORM-搜索器/筛选器]
