@@ -27,7 +27,7 @@
 3. [栈和队列](./Doc/java基础/data_structures_02.md)
 4. [优先级队列(解析表达式)](./Doc/java基础/data_structures_03.md)
 5. [链表(单向、双向、迭代器)](./Doc/java基础/data_structures_04.md)
-6. [递归]
+6. [递归](./Doc/java基础/data_structures_05.md)
 7. [高级排序(希尔、快速、基数)](./Doc/java基础/data_structures_06.md)
 8. [二叉树、哈夫曼树](./Doc/java基础/data_structures_07.md)
 9. [红黑树]
@@ -40,10 +40,6 @@
 
 
 ## Junit 3.8 源码系列
-
-## 待整理
-* [简易四则运算](Doc/java基础/java算法与结构-后缀表达式)
-* [web开发中的文件上传下载](Doc/Temp/web开发中的文件上传下载.md)
 
 ## Net
 * [C#开发windows服务](Doc/dotnet/windows-service.md)
@@ -70,4 +66,5 @@
 * [XL工作优化方向-前端-后端-微服务]
 * [mongoDb基本操作](Doc/工作/mongoDb.md)
 * [工作遇到的问题-spring配置](Doc/工作/Spring映射问题.md)
+* [web开发中的文件上传下载](Doc/Temp/web开发中的文件上传下载.md)
 
