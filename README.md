@@ -67,4 +67,5 @@
 * [mongoDb基本操作](Doc/工作/mongoDb.md)
 * [工作遇到的问题-spring配置](Doc/工作/Spring映射问题.md)
 * [web开发中的文件上传下载](Doc/Temp/web开发中的文件上传下载.md)
+* [数据库批量操作总结](Doc/Temp/数据库批量操作.md)
 
