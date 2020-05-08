@@ -11,14 +11,14 @@
 > 0<=mark<=position<=limit<=capacity
 
 新创建一个初始容量为10的ByteBuffer逻辑视图如下:
-![初始buffer](../../Resource/JavaNio_1_0.png)
+![初始buffer](../../../Resource/JavaNio/JavaNio_1_0.png)
 
 
 ## put存储
 ```java
 buffer.put((byte)'H').put((byte)'e').put((byte)'l').put((byte)'l').put((byte)'o');
 ```
-![put](../../Resource/JavaNio_1_1.png)
+![put](../../../Resource/JavaNio/JavaNio_1_1.png)
 假设我们想将缓冲区中的内容从
 “Hello”的ASCII码更改为“Mellow”。我们可以这样实现
 ```java
@@ -44,17 +44,17 @@ Buffer.flip();
 `Rewind `只更改`position`，不改变`limit`
 
 翻转后的状态如下：
-![flip](../../Resource/JavaNio_1_2.png)
+![flip](../../../Resource/JavaNio/JavaNio_1_2.png)
 
 ## 压缩
 
 有时候我们需要释放一部分已处理的空间，以便继续写入。就需要用到`compact`功能
 
 压缩前：
-![compact_before](../../Resource/JavaNio_1_3.png)
+![compact_before](../../../Resource/JavaNio/JavaNio_1_3.png)
 
 执行`compact`压缩后：
-![compact_after](../../Resource/JavaNio_1_4.png)
+![compact_after](../../../Resource/JavaNio/JavaNio_1_4.png)
 
 
 # 标记

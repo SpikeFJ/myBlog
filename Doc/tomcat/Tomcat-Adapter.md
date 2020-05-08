@@ -4,7 +4,7 @@ Adapter顾名思义：适配器。适配不同的容器
 之前我们讲到Service由Connector和多个Container容器组成，Connector和Container就是通过Adapter连接的。<br>
 
 如果Tomcat需要更换容器，如采用ContainerNew，则只需要新建一个类实现Adapter接口，调用ContainerNew相应的方法，对Connector没有任何影响。
-![tomcat-connector-adapter](../../Resource/Tomcat-Connector-Adapter.png)
+![tomcat-connector-adapter](../../Resource/Tomcat/Tomcat-Connector-Adapter.png)
 
 这里有两个类都叫Request，不能搞混肴。
 * org.apache.coyote.Request。

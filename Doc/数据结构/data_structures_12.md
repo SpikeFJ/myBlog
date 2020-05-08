@@ -35,8 +35,8 @@ public class Vertex {
 如果有N个顶点，则邻接矩阵就是N*N的数组
 
 示意图：<br>
-![邻接矩阵0](../../Resource/data_structures_12_0.png)
-![邻接矩阵1](../../Resource/data_structures_12_1.png)
+![邻接矩阵0](../../Resource/数据结构/data_structures_12_0.png)
+![邻接矩阵1](../../Resource/数据结构/data_structures_12_1.png)
 
 观察上图，可以得出以下几点
 * 两个顶点有边则标识为1，否则为0
@@ -52,8 +52,8 @@ public class Vertex {
 每个单独的链表表示了有哪些顶点和当前顶点邻接。
 
 示意图如下：<br>
-![邻接表0](../../Resource/data_structures_12_0.png)
-![邻接表1](../../Resource/data_structures_12_2.png)
+![邻接表0](../../Resource/数据结构/data_structures_12_0.png)
+![邻接表1](../../Resource/数据结构/data_structures_12_2.png)
 
 `->`表示链表中的一个节点，并不强求有序，与路径无关。
 
@@ -141,7 +141,7 @@ public class Graph {
 ## 3.1 深度优先搜索
 整体思想如下图：
 <br>
-![深度优先搜索](../../Resource/data_structures_12_3.png)
+![深度优先搜索](../../Resource/数据结构/data_structures_12_3.png)
 
 主要有如下几个规则：
 
@@ -157,7 +157,7 @@ public class Graph {
 5. 当弹出到`A`时。A还有未访问的临界点，此时访问下一个顶点`C`,接着访问`D`,`G`,`I`,最后访问`A`
 
 下图是搜索过程中栈的内容：
-![深度优先搜索](../../Resource/data_structures_12_4.png)
+![深度优先搜索](../../Resource/数据结构/data_structures_12_4.png)
 
 实现代码：
 ```java
@@ -272,7 +272,7 @@ public class Graph {
 ## 3.2 广度优先搜索
 整体思想如下图：
 <br>
-![广度优先搜索](../../Resource/data_structures_12_5.png)
+![广度优先搜索](../../Resource/数据结构/data_structures_12_5.png)
 
 主要有如下几个规则：
 
@@ -287,7 +287,7 @@ public class Graph {
 4. 最后队列中还剩下`HI`时，但当取出他们时，没有发现其他的未访问顶点，此时队列为空。搜索结束。
 
 下图是搜索过程中栈的内容：
-![广度优先搜索](../../Resource/data_structures_12_6.png)
+![广度优先搜索](../../Resource/数据结构/data_structures_12_6.png)
 ```java
    private Queue<Integer> queue = new LinkedList<>();
 
@@ -322,7 +322,7 @@ public class Graph {
 用最少的边连接所有的顶点，这样就组成了**最小生成树**。
 
 下图右侧即为最小生成树：
-![最小生成树](../../Resource/data_structures_12_7.png)
+![最小生成树](../../Resource/数据结构/data_structures_12_7.png)
 
 1. 对于给定的一组顶点，可能有多种最小生成树。
 2. 最小生成树边`E`的数量总是比顶点`V`的数量小1
@@ -359,12 +359,12 @@ public void mst() {
 
 ## 5.1 有向图
 图只需要在已有的基础上添加方向即可。对应到邻接矩阵，则只有一项
-![最小生成树](../../Resource/data_structures_12_8.png)
+![最小生成树](../../Resource/数据结构/data_structures_12_8.png)
 
 
 ## 5.2 拓扑排序算法
 下面以课程为例，描述了得到数学学位所需要修的课程：
-![最小生成树](../../Resource/data_structures_12_9.png)
+![最小生成树](../../Resource/数据结构/data_structures_12_9.png)
 
 下面按课程的先后关系排列他们，下面是得到的序列：
 > BAEDGCFH

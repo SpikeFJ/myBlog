@@ -119,7 +119,7 @@ public abstract Set<SelectionKey> selectedKeys();
 这个集合是选择器对象的私有成员，因而无法直接访问。
 
 下面是示意图：
-![keys-selectedKeys](../../Resource/JavaNio_3_0.png)
+![keys-selectedKeys](../../../Resource/JavaNio/JavaNio_3_0.png)
 
 
 

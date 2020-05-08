@@ -2,7 +2,7 @@ StandardRoot继承WebResourceRoot<br>
 WebResourceRoot表示一个完整的web项目的资源集合，WebResourceRoot包含一系列WebResourceSets对象属性。分别表示不同类型的资源文件。
 
 # WebResourceSets
-![WebResourceSets结构](../../Resource/Tomcat-StandardRoot.png)
+![WebResourceSets结构](../../Resource/Tomcat/Tomcat-StandardRoot.png)
 从结构图可以看出来，资源从类型上划分了以下几种
 * 归档文件
     * war文件

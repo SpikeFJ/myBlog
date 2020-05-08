@@ -7,7 +7,7 @@
 
 示意图如下：
 
-![归并算法](../../Resource/data_structures_06_1.png)
+![归并算法](../../Resource/数据结构/data_structures_06_1.png)
 
 代码如下：
 ```java
@@ -67,7 +67,7 @@
 ## 2. n-增量排序
 
 希尔排序通过加大插入排序中元素的间隔，并在这些有间隔的元素中进行插入排序，从而使数据能大幅度的移动。
-![希尔排序](../../Resource/data_structures_06_2.png)
+![希尔排序](../../Resource/数据结构/data_structures_06_2.png)
 
 * 当对0，4，8完成排序后，算法右移一位，对1，5，9排序
 * 持续进行，直到所有数据都完成4-增量排序
@@ -187,7 +187,7 @@ void shellSort() {
 > 划分就是选定一个值，使得所有小于该值的元素在一组，大于该值的元素在另一组。
 
 如下图所示:
-![划分](../../Resource/data_structures_06_3.png)
+![划分](../../Resource/数据结构/data_structures_06_3.png)
 
 上图水平线代表选定的基准值，在快排中是选定一个**具体的数据项的值**作为基准值，称之为**枢纽**。
 
@@ -285,7 +285,7 @@ void recQuickSort(int left, int right) {
 
 调用`partitionIt`对数组进行划分，方法返回分割边界的下标值，即右边子数组的最左端的数据项。
 如下图：
-![partitionIt](../../Resource/data_structures_06_4.png)
+![partitionIt](../../Resource/数据结构/data_structures_06_4.png)
 
 
 注意：划分后，对左边的数组调用是从`left`至`paritition-1`,右边的数组调用是从`paritition+1`至`right`
@@ -299,14 +299,14 @@ void recQuickSort(int left, int right) {
 
 第三个听起来是不可能的，**但请记住，正式因为使用枢纽的关键字的值来划分数组，所以划分之后的左边的数组包含的所有数据项都小于枢纽，后边子数字的所有数据项都大于枢纽，但是如果以某种方式把它放在两个子数组之间，枢纽就会在正确的位置上了，即在它的最终排序的位置上了。**
 如下图：
-![partitionIt](../../Resource/data_structures_06_5.png)
+![partitionIt](../../Resource/数据结构/data_structures_06_5.png)
 
 上图只是示意，具体操作 可以将右边子数组所有数据项右移一位，但是这样既低效又没有必要。
 
 只需要记住右边的子数组所有数据项都大于枢纽，但尚未排好序。所以可以在右边子数组内部移动而没有其他影响。
 
 因此只需要交换 **枢纽** 和 **右边数组最左端** 的数据项就可以了。
-![partitionIt](../../Resource/data_structures_06_6.png)
+![partitionIt](../../Resource/数据结构/data_structures_06_6.png)
 
 为了将选择枢纽的过程合并到`recQuickSort`方法中，用一个明显的语句为枢纽赋值，并且把枢纽的值作为参数传递给`partitionIt()`,完整代码如下:
 ```java
@@ -358,7 +358,7 @@ int partitionIt1(int left, int right, int pivot) {
 三数据项取中除了选择枢纽更为有效之外，还有一个额外的好处：可以在第二个内部`while`中取消边界的检测，这是怎那么实现的？
 > 因为在三数据项取中的过程中，不但选择了枢纽，还对3个数据项进行了排序，所以可以消除这个边界检测
 示意图如下：
-![partitionIt](../../Resource/data_structures_06_7.png)
+![partitionIt](../../Resource/数据结构/data_structures_06_7.png)
 
 而且排序过程中就不需要再考虑这3个数据项了，划分可以从left+1和right-1开始了
 

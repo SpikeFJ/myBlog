@@ -30,7 +30,7 @@ public class MapperListener extends LifecycleMBeanBase implements ContainerListe
 
 Mapper采用以下层次结构搭建了针对Tomcat的路由规则：
 
-![Tomcat-Mapper结构](../../Resource/Tomcat-Mapper.png)
+![Tomcat-Mapper结构](../../Resource/Tomcat/Tomcat-Mapper.png)
 ---
 * MapElment是所有元素的基类。含有name(host的名称/context的路径等)和对应的泛型对象
 * MappedHost含有ContextList的集合，保存该虚拟主机下的所有context的有序集合。

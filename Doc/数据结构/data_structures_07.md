@@ -10,12 +10,12 @@
 
 先通过下图了解下树的结构及常用术语：
 
-![树结构](../../Resource/data_structures_07_1.png)
+![树结构](../../Resource/数据结构/data_structures_07_1.png)
 
 二叉树：如果树中每个节点最多只能有两个子节点，这样的树就称之为**二叉树**，且其左节点的值小于该节点，右节点的值大于该节点。
 
 如果树中的大部分的节点都在根的一边，我们称这样的树为**不平衡树**
-![树结构](../../Resource/data_structures_07_2.png)
+![树结构](../../Resource/数据结构/data_structures_07_2.png)
 
 之所有造成不平衡的情况，是因为大部分(所有)的节点都大于或小于根节点。
 
@@ -160,7 +160,7 @@ public class Tree {
 ## 1.该节点是叶子节点
 
 示意图如下:
-![树结构](../../Resource/data_structures_07_3.png)
+![树结构](../../Resource/数据结构/data_structures_07_3.png)
 
 ```java
  public boolean delete(int value) {
@@ -213,7 +213,7 @@ public class Tree {
 
 只需要把`deleteNode`的父节点的`left`/`right`指向`deleteNode`的唯一子节点
 示意图如下:
-![树结构](../../Resource/data_structures_07_4.png)
+![树结构](../../Resource/数据结构/data_structures_07_4.png)
 
 ```java
  if (current.left == null) {
@@ -244,14 +244,14 @@ public class Tree {
 ## 3.该节点有两个子节点
 
 下图 是一个错误的代替方法：用右子树替代删除节点的示意图：
-![删除-右子树取代](../../Resource/data_structures_07_5.png)
+![删除-右子树取代](../../Resource/数据结构/data_structures_07_5.png)
 
 关键点在于：
 
 **对每一个节点来说，比该节点的值 次高 的是它的中序后继节点**
 
 所以有两个节点的处理方式也就显而易见了：用它的中序后继节点代替之。
-![删除-中序后继](../../Resource/data_structures_07_6.png)
+![删除-中序后继](../../Resource/数据结构/data_structures_07_6.png)
 
 
 如何定位中序后继节点呢？
@@ -261,7 +261,7 @@ public class Tree {
 如果右节点没有子左节点，则右节点本身就是后继节点；否则递归找到右节点的子左节点
 
 示意图如下：
-![删除-中序后继](../../Resource/data_structures_07_7.png)
+![删除-中序后继](../../Resource/数据结构/data_structures_07_7.png)
 
 
 **TODO:**
@@ -274,7 +274,7 @@ public class Tree {
 用数组的方法表示树，节点保存在数组中，节点间不是通过引用相连。
 
 其中下标为0的是根，下标为1的是根的左子节点，一次类推
-![数组表示树](../../Resource/data_structures_07_8.png)
+![数组表示树](../../Resource/数据结构/data_structures_07_8.png)
 
 
 设置节点索引值为`index`,则左子节点是`2*index+1`,右子节点是`2*index+2`，父节点是`(index-1)/2`
@@ -297,7 +297,7 @@ public class Tree {
 首先了解下，在计算机世界里每个字符都是由一个(如`ASCII`编码)或多个(如`Unicode`编码)表示。
 
 下图列出来一些常用字符的`ASCII`编码，可以看到都是由8个位表示。
-![ASCII编码示意图](../../Resource/data_structures_07_9.png)
+![ASCII编码示意图](../../Resource/数据结构/data_structures_07_9.png)
 
 由此可以想到压缩的最常用的方法就是：减少常用字符的位数量
 
@@ -315,15 +315,15 @@ public class Tree {
 假设要发送消息：`SUSIE SAYS IT IS EASY`.字母`S`出现的最多，其次是空格
 
 用下列表格列出每种字符出现的次数，这样的表称为`频率表`
-![频率表](../../Resource/data_structures_07_10.png)
+![频率表](../../Resource/数据结构/data_structures_07_10.png)
 
 遵循 `次数最多的字符所占位数应该最少` 的原则，下图显示了是如何编码的
-![编码](../../Resource/data_structures_07_11.png)
-![编码结果](../../Resource/data_structures_07_12.png)
+![编码](../../Resource/数据结构/data_structures_07_11.png)
+![编码结果](../../Resource/数据结构/data_structures_07_12.png)
 
 ## 用哈夫曼树解码
 怎样才能将上述字节转换成字符呢，此处就采用叫做哈夫曼树的二叉树来解决解码问题。
-![哈夫曼解码](../../Resource/data_structures_07_13.png)
+![哈夫曼解码](../../Resource/数据结构/data_structures_07_13.png)
 
 1. 每个叶子节点代表一个字符
 2. 圈外的数字代表出现的频率
@@ -348,11 +348,11 @@ public class Tree {
 3. 重复步骤1，3，当队列中只有一棵树时，它就是所建的哈夫曼树
 
 示意图如下
-![建立哈夫曼树](../../Resource/data_structures_07_14.png)
+![建立哈夫曼树](../../Resource/数据结构/data_structures_07_14.png)
 
 ## 信息编码
 信息编码从建立代码表开始，这个表理出了每个字符的哈夫曼代码。
-![建立哈夫曼树](../../Resource/data_structures_07_15.png)
+![建立哈夫曼树](../../Resource/数据结构/data_structures_07_15.png)
 
 ## 创建哈夫曼编码
 怎样建立哈夫曼编码，生成代码表呢？

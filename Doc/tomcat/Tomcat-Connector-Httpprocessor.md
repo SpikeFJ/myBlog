@@ -77,7 +77,7 @@ Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,ja;q=0.7
 parseRequestLine 分为6个阶段,通过parsingRequestLinePhase字段区分
 </p>
 
-![](../../Resource/Tomcat-Http11Processor-ParseRequestLine.png)
+![](../../Resource/Tomcat/Tomcat-Http11Processor-ParseRequestLine.png)
 <br>
 
 # 解析请求行(parseRequestLine)

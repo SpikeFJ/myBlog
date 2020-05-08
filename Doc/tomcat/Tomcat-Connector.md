@@ -8,7 +8,7 @@ Connector自身的init，start均是调用ProtocolHandler的init，start
 ProtcolHandle负责底层IO通讯及应用层协议解析。
 
 ProtocolHandler结构如下：
-![connector结构](../../Resource/Tomcat-Connector.png)
+![connector结构](../../Resource/Tomcat/Tomcat-Connector.png)
 
 Nio、Nio2、Apr对应着具体的底层通讯处理方式。<br>
 Ajp、Http表示上层解析协议 。
@@ -101,7 +101,7 @@ public final void start() throws Exception {
 ```
 
 ### 1.1.1 Acceptor
-![Acceptor](../../Resource/Tomcat-Acceptor.png)
+![Acceptor](../../Resource/Tomcat/Tomcat-Acceptor.png)
 ```java
 protected class Acceptor extends AbstractEndpoint.Acceptor {
     @Override
@@ -448,7 +448,7 @@ protected void doRun() {
 ```
 ## 1.2. ConnectionHandler
 ConnectionHandler对象的初始化，所以上述EndPoint通过getHandle可以获取到ConnectionHandler对象。<br>
-![ConnectionHandle初始化](../../Resource/Tomcat-ConnectionHandle.png))
+![ConnectionHandle初始化](../../Resource/Tomcat/Tomcat-ConnectionHandle.png))
 ```java
 public SocketState process(SocketWrapperBase<S> wrapper, SocketEvent status) {
             if (getLog().isDebugEnabled()) {
@@ -675,7 +675,7 @@ public SocketState process(SocketWrapperBase<S> wrapper, SocketEvent status) {
         }
 ```
 可以看到ConnectionHandler把具体的规约解析交由Processor处理，Porcessor结构如下：
-![Processor机构](../../Resource/Tomcat_Processor.png)
+![Processor机构](../../Resource/Tomcat/Tomcat_Processor.png)
 ### 1.2.1 Processor
 此处以Http11Processor为例，主要负责http协议解析，并组织成Req，Resp对象交给Adapter处理。<br>
 由具体子类实现service方法，方法太长今天就不细细分析了，大体流程<br>

@@ -9,7 +9,7 @@
 3. 移动到下一个(第二个)位置，继续比较
 
 下面是示意图：
-![冒泡排序](../../Resource/data_structures_01_1.png)
+![冒泡排序](../../Resource/数据结构/data_structures_01_1.png)
 
 由上图可知：
 
@@ -56,7 +56,7 @@
 3. 依次循环
 
 示意图如下:
-![冒泡排序](../../Resource/data_structures_01_2.png)
+![冒泡排序](../../Resource/数据结构/data_structures_01_2.png)
 
 代码如下:
 ```java
@@ -92,7 +92,7 @@
 然而这些元素的最终位置尚未确定，因为还有未排序的元素需要插入到他们中间，他们的位置还要变动。
 
 示意图如下:
-![冒泡排序](../../Resource/data_structures_01_3.png)
+![冒泡排序](../../Resource/数据结构/data_structures_01_3.png)
 
 代码如下:
 ```java
