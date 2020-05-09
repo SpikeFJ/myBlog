@@ -11,7 +11,7 @@ xxl-job：
 
 ***
 
-首先启动`xxl-job-admin`调度中心
+# 一.如何调度
 
 根据控制台日志打印的字符`>>>>>>>>> init xxl-job admin success.`,可以找到程序的入口类`XxlJobAdminConfig`,
 
@@ -61,11 +61,11 @@ public void init() throws Exception {
 
 
         1. 找出`xxl_job_group`中所有执行器类型是自动注册的执行器，如果无记录则返回。
-
+    
         2. 删除所有已死亡的()`xxl_job_registry`记录。判断依据:最后一次更新时间距离当前时间相差90s，这里使用了date_add函数。
-
+    
         3. 找到存活的执行器，针对所有`registry_group`等于`EXECUTOR`的记录，将`registry_key`，`registry_value`组织成`key:appName,value:List<registryList>`的形式
-
+    
         4. 遍历步骤1中的`groupList`,将`group`对象中的`setAddressList`更新成步骤3中的`key-value`中的`value`值。
 
 **总结：`JobRegistryMonitorHelper`做了两件事**
@@ -92,7 +92,7 @@ public void init() throws Exception {
 ## 3. JobTriggerPoolHelper
 
      `JobTriggerPoolHelper`的`start`方法，新建两个线程池:`fastTriggerPool`和`slowTriggerPool`，执行调度的时候会根据执行的频率选择不同的线程池
-
+    
     传递过来的任务会经由XxlJobTrigger.trigger(jobId, triggerType, failRetryCount, executorShardingParam, executorParam);执行
 
 ## 4. JobLogReportHelper
@@ -155,8 +155,246 @@ private void refreshNextValidTime(XxlJobInfo jobInfo, Date fromTime) throws Pars
 }
 ```
 
-2. `ringThread`从命名就可以看出来是一个实现了时间轮的调度结构。
+2. `ringThread`从命名就可以看出来是一个实现了时间轮的数据结构。主要逻辑：从`Map<Integer, List<Integer>> ringData = new ConcurrentHashMap<>();`结构中每隔1秒取出需要执行的任务集合并执行
+
+```java
+。。。
+while (!ringThreadToStop) {
+    。。。。
+    //1.根据当前时间的秒数得到相应位置的要执行的任务
+    for (int i = 0; i < 2; i++) {
+        List<Integer> tmpData = ringData.remove( (nowSecond+60-i)%60 );
+        if (tmpData != null) {
+            ringItemData.addAll(tmpData);
+        }
+    }
+    。。。。
+    //2,.遍历集合并执行
+    for (int jobId: ringItemData) {
+        JobTriggerPoolHelper.trigger(jobId, TriggerTypeEnum.CRON, -1, null, null);
+    }
+    //3. 清空集合
+    ringItemData.clear();
+
+    TimeUnit.MILLISECONDS.sleep(1000 - System.currentTimeMillis()%1000);
+}
+```
 
 
-# 总结：
+
 **`JobScheduleHelper`是调度器 `JobTriggerPoolHelper`是执行器，所以config里面先开启执行器后开启调度器**
+
+
+# 二.如何执行任务
+
+**这里的执行是指远程调用执行器去执行，真正的执行是执行器执行，此处只是调度中心模块不负责具体的执行。**
+
+1. `JobTriggerPoolHelper.addTrigger`的内部首先根据调度频率选择相应的线程池。
+2. 通过线程池执行` XxlJobTrigger.trigger`
+3. 调用`processTrigger`方法,方法执行以下逻辑：
+```
+1. 保存调用日志
+2. 初始化调用参数
+3. 根据路由策略获取执行器地址，这里也可以看出来job交由哪个执行器执行就固定的，路由策略是针对同一个执行器下的多个地址选择。
+4. 远程调用执行runExecutor
+5. 手机调用结果并保存
+```
+
+下面是`runExecutor`的实现逻辑：
+```java
+
+    public static ReturnT<String> runExecutor(TriggerParam triggerParam, String address){
+        ReturnT<String> runResult = null;
+        try {
+            //根据地址获取ExecutorBiz对象，
+            ExecutorBiz executorBiz = XxlJobScheduler.getExecutorBiz(address);
+            runResult = executorBiz.run(triggerParam);
+        } catch (Exception e) {
+            logger.error(">>>>>>>>>>> xxl-job trigger error, please check if the executor[{}] is running.", address, e);
+            runResult = new ReturnT<String>(ReturnT.FAIL_CODE, ThrowableUtil.toString(e));
+        }
+
+        StringBuffer runResultSB = new StringBuffer(I18nUtil.getString("jobconf_trigger_run") + "：");
+        runResultSB.append("<br>address：").append(address);
+        runResultSB.append("<br>code：").append(runResult.getCode());
+        runResultSB.append("<br>msg：").append(runResult.getMsg());
+
+        runResult.setMsg(runResultSB.toString());
+        return runResult;
+    }
+
+     public static ExecutorBiz getExecutorBiz(String address) throws Exception {
+        // valid
+        if (address==null || address.trim().length()==0) {
+            return null;
+        }
+
+        // load-cache
+        address = address.trim();
+        ExecutorBiz executorBiz = executorBizRepository.get(address);
+        if (executorBiz != null) {
+            return executorBiz;
+        }
+
+        // set-cache
+        XxlRpcReferenceBean referenceBean = new XxlRpcReferenceBean();
+        referenceBean.setClient(NettyHttpClient.class);//底层通讯对象，默认http通讯
+        referenceBean.setSerializer(HessianSerializer.class);//序列化对象
+        referenceBean.setCallType(CallType.SYNC);//发送类型：SYNC同步发送
+        referenceBean.setLoadBalance(LoadBalance.ROUND);//负载均衡策略
+        referenceBean.setIface(ExecutorBiz.class);//被代理的类
+        referenceBean.setVersion(null);
+        referenceBean.setTimeout(3000);
+        referenceBean.setAddress(address);
+        referenceBean.setAccessToken(XxlJobAdminConfig.getAdminConfig().getAccessToken());
+        referenceBean.setInvokeCallback(null);
+        referenceBean.setInvokerFactory(null);
+
+        //这里会生成代理对象，负责远程执行器的调用。XxlRpcReferenceBean代码在Xxl-rpc包中
+        executorBiz = (ExecutorBiz) referenceBean.getObject();
+
+        executorBizRepository.put(address, executorBiz);
+        return executorBiz;
+    }
+```
+具体调用的逻辑参照`XxlRpcReferenceBean`的代码：
+```java
+ public Object getObject() throws Exception {
+        this.initClient();
+        //此处代理的是iface，即ExecutorBiz接口，该接口只有唯一实现类ExecutorBizImpl
+        //这里虽然执行的是调度模块的ExecutorBizImpl方法，但是代码类会在底层向执行器所在机器发送执行消息，实际执行的是执行器机器上的ExecutorBizImpl方法
+        return Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(), new Class[]{this.iface}, new InvocationHandler() {
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                String className = method.getDeclaringClass().getName();
+                String varsion_ = XxlRpcReferenceBean.this.version;
+                String methodName = method.getName();
+                Class<?>[] parameterTypes = method.getParameterTypes();
+                Object[] parameters = args;
+                if (className.equals(XxlRpcGenericService.class.getName()) && methodName.equals("invoke")) {
+                    Class<?>[] paramTypes = null;
+                    if (args[3] != null) {
+                        String[] paramTypes_str = (String[])((String[])args[3]);
+                        if (paramTypes_str.length > 0) {
+                            paramTypes = new Class[paramTypes_str.length];
+
+                            for(int i = 0; i < paramTypes_str.length; ++i) {
+                                paramTypes[i] = ClassUtil.resolveClass(paramTypes_str[i]);
+                            }
+                        }
+                    }
+
+                    className = (String)args[0];
+                    varsion_ = (String)args[1];
+                    methodName = (String)args[2];
+                    parameterTypes = paramTypes;
+                    parameters = (Object[])((Object[])args[4]);
+                }
+
+                if (className.equals(Object.class.getName())) {
+                    XxlRpcReferenceBean.logger.info(">>>>>>>>>>> xxl-rpc proxy class-method not support [{}#{}]", className, methodName);
+                    throw new XxlRpcException("xxl-rpc proxy class-method not support");
+                } else {
+                    String finalAddress = XxlRpcReferenceBean.this.address;
+                    if ((finalAddress == null || finalAddress.trim().length() == 0) && XxlRpcReferenceBean.this.invokerFactory != null && XxlRpcReferenceBean.this.invokerFactory.getServiceRegistry() != null) {
+                        String serviceKey = XxlRpcProviderFactory.makeServiceKey(className, varsion_);
+                        TreeSet<String> addressSet = XxlRpcReferenceBean.this.invokerFactory.getServiceRegistry().discovery(serviceKey);
+                        if (addressSet != null && addressSet.size() != 0) {
+                            if (addressSet.size() == 1) {
+                                finalAddress = (String)addressSet.first();
+                            } else {
+                                finalAddress = XxlRpcReferenceBean.this.loadBalance.xxlRpcInvokerRouter.route(serviceKey, addressSet);
+                            }
+                        }
+                    }
+
+                    if (finalAddress != null && finalAddress.trim().length() != 0) {
+                        //1.组织要发送的对象XxlRpcRequest
+                        XxlRpcRequest xxlRpcRequest = new XxlRpcRequest();
+                        xxlRpcRequest.setRequestId(UUID.randomUUID().toString());
+                        xxlRpcRequest.setCreateMillisTime(System.currentTimeMillis());
+                        xxlRpcRequest.setAccessToken(XxlRpcReferenceBean.this.accessToken);
+                        xxlRpcRequest.setClassName(className);
+                        xxlRpcRequest.setMethodName(methodName);
+                        xxlRpcRequest.setParameterTypes(parameterTypes);
+                        xxlRpcRequest.setParameters(parameters);
+                        xxlRpcRequest.setVersion(XxlRpcReferenceBean.this.version);
+                        XxlRpcFutureResponse futureResponse;
+                        if (CallType.SYNC == XxlRpcReferenceBean.this.callType) {
+                            //同步发送
+                            futureResponse = new XxlRpcFutureResponse(XxlRpcReferenceBean.this.invokerFactory, xxlRpcRequest, (XxlRpcInvokeCallback)null);
+
+                            Object var31;
+                            try {
+                                XxlRpcReferenceBean.this.clientInstance.asyncSend(finalAddress, xxlRpcRequest);
+                                //根据超时配置等待结果
+                                XxlRpcResponse xxlRpcResponse = futureResponse.get(XxlRpcReferenceBean.this.timeout, TimeUnit.MILLISECONDS);
+                                if (xxlRpcResponse.getErrorMsg() != null) {
+                                    throw new XxlRpcException(xxlRpcResponse.getErrorMsg());
+                                }
+
+                                var31 = xxlRpcResponse.getResult();
+                            } catch (Exception var21) {
+                                XxlRpcReferenceBean.logger.info(">>>>>>>>>>> xxl-rpc, invoke error, address:{}, XxlRpcRequest{}", finalAddress, xxlRpcRequest);
+                                throw (Throwable)(var21 instanceof XxlRpcException ? var21 : new XxlRpcException(var21));
+                            } finally {
+                                futureResponse.removeInvokerFuture();
+                            }
+
+                            return var31;
+                        } else if (CallType.FUTURE == XxlRpcReferenceBean.this.callType) {
+                            //2. 异步发送
+                            futureResponse = new XxlRpcFutureResponse(XxlRpcReferenceBean.this.invokerFactory, xxlRpcRequest, (XxlRpcInvokeCallback)null);
+
+                            try {
+                                XxlRpcInvokeFuture invokeFuture = new XxlRpcInvokeFuture(futureResponse);
+                                XxlRpcInvokeFuture.setFuture(invokeFuture);
+                                XxlRpcReferenceBean.this.clientInstance.asyncSend(finalAddress, xxlRpcRequest);
+                                return null;
+                            } catch (Exception var20) {
+                                XxlRpcReferenceBean.logger.info(">>>>>>>>>>> xxl-rpc, invoke error, address:{}, XxlRpcRequest{}", finalAddress, xxlRpcRequest);
+                                futureResponse.removeInvokerFuture();
+                                throw (Throwable)(var20 instanceof XxlRpcException ? var20 : new XxlRpcException(var20));
+                            }
+                        } else if (CallType.CALLBACK == XxlRpcReferenceBean.this.callType) {
+                            //3. 带回调的异步发送
+                            XxlRpcInvokeCallback finalInvokeCallback = XxlRpcReferenceBean.this.invokeCallback;
+                            XxlRpcInvokeCallback threadInvokeCallback = XxlRpcInvokeCallback.getCallback();
+                            if (threadInvokeCallback != null) {
+                                finalInvokeCallback = threadInvokeCallback;
+                            }
+
+                            if (finalInvokeCallback == null) {
+                                throw new XxlRpcException("xxl-rpc XxlRpcInvokeCallback（CallType=" + CallType.CALLBACK.name() + "） cannot be null.");
+                            } else {
+                                XxlRpcFutureResponse futureResponsex = new XxlRpcFutureResponse(XxlRpcReferenceBean.this.invokerFactory, xxlRpcRequest, finalInvokeCallback);
+
+                                try {
+                                    XxlRpcReferenceBean.this.clientInstance.asyncSend(finalAddress, xxlRpcRequest);
+                                    return null;
+                                } catch (Exception var19) {
+                                    XxlRpcReferenceBean.logger.info(">>>>>>>>>>> xxl-rpc, invoke error, address:{}, XxlRpcRequest{}", finalAddress, xxlRpcRequest);
+                                    futureResponsex.removeInvokerFuture();
+                                    throw (Throwable)(var19 instanceof XxlRpcException ? var19 : new XxlRpcException(var19));
+                                }
+                            }
+                        } else if (CallType.ONEWAY == XxlRpcReferenceBean.this.callType) {
+                            //4. 异步发送无
+                            XxlRpcReferenceBean.this.clientInstance.asyncSend(finalAddress, xxlRpcRequest);
+                            return null;
+                        } else {
+                            throw new XxlRpcException("xxl-rpc callType[" + XxlRpcReferenceBean.this.callType + "] invalid");
+                        }
+                    } else {
+                        throw new XxlRpcException("xxl-rpc reference bean[" + className + "] address empty");
+                    }
+                }
+            }
+        });
+    }
+```
+
+至此 调度分析告一段落，后面继续分析执行器执行逻辑，关注以下几个问题
+
+1. 执行器中的地址从何而来
+2. 如何响应调度中心的调度
+3. 如何给与反馈
