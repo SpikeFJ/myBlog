@@ -1,3 +1,4 @@
+0. handle针对的是bossgroup，childHandle针对的是workgroup
 1. Decoder是指入栈Handler，指从网络IO-->用户处理器,read()发起
 2. Encoder是指出栈Handler，指从用户处理器-->网络IO,write()结束
 3. `LengthFieldBasedFrameDecoder`中常见的几个属性
@@ -24,3 +25,8 @@ eg:
     lengthFieldLength   =  2;（长度字段占用Length两个字节长度）
     lengthAdjustment    = -3;（长度字段值=0x10=16,实际长度是13，所以需要-3）
     initialBytesToStrip =  3;（需要略过HDR1，Length，HDR2 3个字节）
+
+    ![1-2020-05-12](https://raw.githubusercontent.com/SpikeFJ/picgo/master/1-2020-05-12.png)
+
+    ![Sketchpad - 副本-2020-05-13](https://raw.githubusercontent.com/SpikeFJ/picgo/master/Sketchpad%20-%20%E5%89%AF%E6%9C%AC-2020-05-13.png)
+

@@ -43,9 +43,6 @@
 2. [任务调度2 Xxl-job调度中心源码分析](./Doc/任务调度/任务调度2-Xxl-job源码分析-调度中心.md)
 3. [任务调度3-Xxl-job源码分析之执行器](./Doc/任务调度/任务调度3-Xxl-job源码分析之执行器.md)
 
-# Junit 3.8 源码系列
-
-
 # 有趣的
 * [punch-hole](Doc/Temp/Punch-hole.md)
 * [远程开关机](Doc/Temp/远程开关机.md)
