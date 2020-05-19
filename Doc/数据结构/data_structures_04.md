@@ -194,6 +194,7 @@ public class FirstLast{
         last = null;
     }
     
+    //双端链表insertFirst时，需要注意如果为空，需要调整Last指针
     public void insertFirst(T value)
     {
         Node newNode= new Node();
@@ -207,6 +208,7 @@ public class FirstLast{
         first = newNode;  
     }
     
+    //双端链表insertLast时，需要注意如果为空，需要调整First指针
      public void insertLast(T value)
     {
         Node newNode= new Node();
@@ -223,7 +225,13 @@ public class FirstLast{
 }
 ```
 
+**注意**：
 
+1. 初始化时候，头指针(`First`),尾指针(`Last`)都是null
+2. 头部插入时，如果列表为空，需要将`Last`也指向新节点
+3. 尾部插入时，如果列表为空，需要将`First`也指向新节点
+4. 头部删除时，如果只有一个元素(`First.next=null`),则`Last`也需要指向`null`
+5. 尾部删除时，如果只有一个元素,则`First`也需要指向`null`
 
 
 
