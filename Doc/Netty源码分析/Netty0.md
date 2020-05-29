@@ -5,15 +5,17 @@
 首先我们以一个常用的列子入手：
 
 ```java
-//①
+//1.创建eventLoopGroup
 EventLoopGroup bossGroup = new NioEventLoopGroup(1);
 EventLoopGroup workerGroup = new NioEventLoopGroup();
 try {
     ServerBootstrap b = new ServerBootstrap();
     b.group(bossGroup, workerGroup)
-        //②
+        //2.指定channel对象
         .channel(NioServerSocketChannel.class)
+        //3.bossGroup处理器
         .handler(new LoggingHandler(LogLevel.INFO))
+        //4.workGroup处理器
         .childHandler(new ChannelInitializer<SocketChannel>() {
             @Override
             public void initChannel(SocketChannel ch) {
@@ -24,7 +26,7 @@ try {
                 p.addLast(new DiscardServerHandler());
             }
         });
-    //③
+    //5.开始监听
     ChannelFuture f = b.bind(PORT).sync();
     f.channel().closeFuture().sync();
 } finally {
@@ -43,6 +45,34 @@ try {
 
 ![NioEventLoop](../../Resource/netty/NioEventLoopGroup.png)
 
+
+## 1. 整体结构梳理
+
+1) `EventExecutorGroup`
+
+> EventExecutorGroup 通过其 next 方法对外提供 EventExecutor 以供使用。除此之外，还负责每个 EventExecutor 的生命周期并且允许以一种全局的方式关闭它们。
+
+`EventExecutorGroup`继承`ScheduledExecutorService`,主要功能：
+
+      1) 重写`submit`等方法，返回类型采用`netty`自带的`Future`，添加了回调函等功能
+      2) 添加 `next`返回相应的`EventExecutor`
+
+2) `AbstractEventExecutorGroup`
+
+   该抽象类实现了`EventExecutorGroup`，大都数实现方式如下，都委托给了`next`方法
+```java
+public Future<?> submit(Runnable task) {
+   return next().submit(task);
+}
+```
+
+3) `MultithreadEventExecutorGroup`
+
+   该类在同一时间通过多线程处理相关任务。
+
+   该类的构造函数中实现了`EventLoop`对象的初始化
+
+## 2. 代码跟踪
 
 
 上图不需要深究，只需要粗略的浏览下，可以得出以下信息：
