@@ -37,313 +37,450 @@ try {
 
 ```
 
-
-
-# 二. NioEventLoopGroup
-
-首先见名知意，`NioEventLoopGroup`是一个组(group)，组中的元素就是`NioEventLoop`,下图就是`NioEventLoopGroup`的整体结构图
-
-![NioEventLoop](../../Resource/netty/NioEventLoopGroup.png)
-
-
-## 1. 整体结构梳理
-
-1) `EventExecutorGroup`
-
-> EventExecutorGroup 通过其 next 方法对外提供 EventExecutor 以供使用。除此之外，还负责每个 EventExecutor 的生命周期并且允许以一种全局的方式关闭它们。
-
-`EventExecutorGroup`继承`ScheduledExecutorService`,主要功能：
-
-      1) 重写`submit`等方法，返回类型采用`netty`自带的`Future`，添加了回调函等功能
-      2) 添加 `next`返回相应的`EventExecutor`
-
-2) `AbstractEventExecutorGroup`
-
-   该抽象类实现了`EventExecutorGroup`，大都数实现方式如下，都委托给了`next`方法
+# 二. `NioEventLoopGroup`
+首先我们关注`EventLoopGroup`对象的创建
 ```java
-public Future<?> submit(Runnable task) {
-   return next().submit(task);
-}
+EventLoopGroup boss = new NioEventLoopGroup();
+EventLoopGroup work = new NioEventLoopGroup();
 ```
+从命名可以看出来`LoopGroup`应该包含/管理了一批`Loop`对象，`loop`代表无限循环，其对象内部维护着一个无限循环的结构。
 
-3) `MultithreadEventExecutorGroup`
+继续回到代码：
+> NioEventLoopGroup-->MultithreadEventLoopGroup-->MultithreadEventExecutorGroup-->AbstractEventExecutorGroup-->EventExecutorGroup
 
-   该类在同一时间通过多线程处理相关任务。
-
-   该类的构造函数中实现了`EventLoop`对象的初始化
-
-## 2. 代码跟踪
-
-
-上图不需要深究，只需要粗略的浏览下，可以得出以下信息：
-
-​	`NioEventLoopGroup`，继承于`ExecutorService`和`ScheduleExecutorService`,所以具备了线程执行和调度执行的能力
-
-
+## 1. `NioEventLoopGroup`初始化
 
 `NioEventLoopGroup`类本身没有多少逻辑，主要就是提供了多个构造函数重载，最终还是调用了父类的构造函数。
 
 在其父类`MultithreadEventLoopGroup`静态初始化块中，设定了默认线程数为处理器2倍的数目。
 
-继续调用父类`MultithreadEventExecutorGroup`的构造函数，到这里终于看到实际的处理逻辑：
-
 ```java
 protected MultithreadEventExecutorGroup(int nThreads, Executor executor,
-                                        EventExecutorChooserFactory chooserFactory, Object... args) {
+                                            EventExecutorChooserFactory chooserFactory, Object... args) {
+        if (nThreads <= 0) {
+            throw new IllegalArgumentException(String.format("nThreads: %d (expected: > 0)", nThreads));
+        }
+        //1. 创建线程执行器
+        if (executor == null) {
+            executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
+        }
 
-    if (executor == null) {
-        executor = new ThreadPerTaskExecutor(newDefaultThreadFactory());
-    }
+        //2. 初始化loop对象
+        children = new EventExecutor[nThreads];
 
-    //children通过数组保存所有EventLoop元素,此处实际就是一个线程池
-    children = new EventExecutor[nThreads];
+        for (int i = 0; i < nThreads; i ++) {
+            boolean success = false;
+            try {
+                children[i] = newChild(executor, args);
+                success = true;
+            } catch (Exception e) {
+                // TODO: Think about if this is a good exception type
+                throw new IllegalStateException("failed to create a child event loop", e);
+            } finally {
+                //3. 如果失败，则将之前成功启动的loop对象依次关闭
+                if (!success) {
+                    for (int j = 0; j < i; j ++) {
+                        children[j].shutdownGracefully();
+                    }
+                    
 
-    for (int i = 0; i < nThreads; i ++) {
-        boolean success = false;
-        try {
-            //调用子类的创建元素方法
-            children[i] = newChild(executor, args);
-            success = true;
-        } catch (Exception e) {
-            throw new IllegalStateException("failed to create a child event loop", e);
-        } finally {
-            //如果其中一个元素创建失败，则将之前所有已创建的元素依次优雅关闭
-            if (!success) {
-                for (int j = 0; j < i; j ++) {
-                    children[j].shutdownGracefully();
-                }
-				//因为优雅关闭是一个异步操作，需要逐个等待判断是否正常关闭
-                for (int j = 0; j < i; j ++) {
-                    EventExecutor e = children[j];
-                    try {
-                        while (!e.isTerminated()) {
-                            e.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+                    //因为关闭使用的是异步优雅关闭，只是通知线程池关闭有可能并未实际执行，需要检测其状态
+                    for (int j = 0; j < i; j ++) {
+                        EventExecutor e = children[j];
+                        try {
+                            while (!e.isTerminated()) {
+                                e.awaitTermination(Integer.MAX_VALUE, TimeUnit.SECONDS);
+                            }
+                        } catch (InterruptedException interrupted) {
+                            // Let the caller handle the interruption.
+                            Thread.currentThread().interrupt();
+                            break;
                         }
-                    } catch (InterruptedException interrupted) {
-                        // Let the caller handle the interruption.
-                        Thread.currentThread().interrupt();
-                        break;
                     }
                 }
             }
         }
-    }
-	
-    //通过选取器工厂（此处与选择器selector区分开来），生成一个选取器
-    //选取器只是group用来选择不同的EventLoop对象，和selector无关联。
-    chooser = chooserFactory.newChooser(children);
+        
+        //创建一个选取器(这里和Nio的选择器区分开来)
+        chooser = chooserFactory.newChooser(children);
 
-    
-    final FutureListener<Object> terminationListener = new FutureListener<Object>() {
-        @Override
-        public void operationComplete(Future<Object> future) throws Exception {
-            if (terminatedChildren.incrementAndGet() == children.length) {
-                terminationFuture.setSuccess(null);
-            }
-        }
-    };
-	//给所有的EventLoop对象添加线程终止的监听器
-    for (EventExecutor e: children) {
-        e.terminationFuture().addListener(terminationListener);
-    }
-
-    //将 eventLoop 放进一个不可变的 set集合中
-    Set<EventExecutor> childrenSet = new LinkedHashSet<EventExecutor>(children.length);
-    Collections.addAll(childrenSet, children);
-    readonlyChildren = Collections.unmodifiableSet(childrenSet);
-}
-```
-
-
-
-继续跟进`newChild`方法，该方法实现在`NioEventLoopGroup类中`
-
-```java
-protected EventLoop newChild(Executor executor, Object... args) throws Exception {
-    EventLoopTaskQueueFactory queueFactory = args.length == 4 ? (EventLoopTaskQueueFactory) args[3] : null;
-    return new NioEventLoop(this, executor, (SelectorProvider) args[0],
-        ((SelectStrategyFactory) args[1]).newSelectStrategy(), (RejectedExecutionHandler) args[2], queueFactory);
-}
-```
-
-
-
-# 二. NioEventLoop
-
-`NioEventLoop`可以理解为一个线程，启动后就一直不停的处理各种任务。(Loop即无限循环)，包括io任务及普通线程任务。
-
-类注释上注明了：该类实现了`SingleThreadEventLoop`，所以是一个单线程任务，用于将`channel`对象注册到`selector上`，并且进行多路分发。
-
-`NioEventLoop`的构造函数中会执行`openSelector`方法，具体如下：
-
-```java
-
-
-```
-
-
-
-因为继承了`ScheduledExecutorService`了，可以推断  `NioEventLoopGroup`具有线程调度的能力
-
-`NioEventLoopGroup`从字面可以看出来是一个组对象，组里维护了一些元素，这些元素是`EventLoop`对象
-
-
-
-首先从`ServerBootStrip`的`bind`作为入口
-
-`bind`方法首先直接校验，然后调用`doBind`代码如下：
-
-```java
-private ChannelFuture doBind(final SocketAddress localAddress) {
-    final ChannelFuture regFuture = initAndRegister();
-    final Channel channel = regFuture.channel();
-    if (regFuture.cause() != null) {
-        return regFuture;
-    }
-
-    if (regFuture.isDone()) {
-        // At this point we know that the registration was complete and successful.
-        ChannelPromise promise = channel.newPromise();
-        doBind0(regFuture, channel, localAddress, promise);
-        return promise;
-    } else {
-        // Registration future is almost always fulfilled already, but just in case it's not.
-        final PendingRegistrationPromise promise = new PendingRegistrationPromise(channel);
-        regFuture.addListener(new ChannelFutureListener() {
+        //对每一个loop对象添加终止事件
+        final FutureListener<Object> terminationListener = new FutureListener<Object>() {
             @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                Throwable cause = future.cause();
-                if (cause != null) {
-                    // Registration on the EventLoop failed so fail the ChannelPromise directly to not cause an
-                    // IllegalStateException once we try to access the EventLoop of the Channel.
-                    promise.setFailure(cause);
-                } else {
-                    // Registration was successful, so set the correct executor to use.
-                    // See https://github.com/netty/netty/issues/2586
-                    promise.registered();
-
-                    doBind0(regFuture, channel, localAddress, promise);
+            public void operationComplete(Future<Object> future) throws Exception {
+                if (terminatedChildren.incrementAndGet() == children.length) {
+                    terminationFuture.setSuccess(null);
                 }
             }
-        });
-        return promise;
+        };
+
+        for (EventExecutor e: children) {
+            e.terminationFuture().addListener(terminationListener);
+        }
+
+        //将所有loop对象copy一个只读集合中
+        Set<EventExecutor> childrenSet = new LinkedHashSet<EventExecutor>(children.length);
+        Collections.addAll(childrenSet, children);
+        readonlyChildren = Collections.unmodifiableSet(childrenSet);
     }
+```
+**总结下构造函数主要做了以下工作：**
+
+1. **创建一个线程执行器ThreadPerTaskExecutor，该执行器的作用在于：后续启动NioEventLoopGroup组中的Loop对象时，不能串行执行，所以会利用该执行器开多个线程同时启动**
+2. **通过`newChild`方法初始化`loop`对象，该方法由`NioEventLoopGroup`对象实现**
+3. **创建一个选取器，该选取器的作用在一个`NioEventLoopGroup`维护着多个`NioEventLoop`对象，当连接到达时，应该使用哪一个`NioEventLoop`对象来处理？这就是选取器：`EventExecutorChooser`要负责的。**
+4. **给每一个`loop`对象添加终止事件**
+5. **将所有`loop`对象添加到一个只读数组中**
+
+**TODO:1.选取器的创建**
+
+## 2. `NioEventLoop`初始化
+
+`NioEventLoop` 本质上是一个线程池，内部队列维护了所有提交过来的任务，另外后台有线程定时从队列中提取任务并执行。
+
+上述提到`Group`会调用`newChild`创建loop对象
+> NioEventLoop-->SingleThreadEventLoop-->SingleThreadEventExecutor-->AbstractScheduledEventExecutor-->AbstractEventExecutor-->AbstractExecutorService-->EventExecutor-->EventExecutorGroup
+
+重点关注下
+```java
+protected SingleThreadEventExecutor(EventExecutorGroup parent, Executor executor,
+                                        boolean addTaskWakesUp, int maxPendingTasks,
+                                        RejectedExecutionHandler rejectedHandler) {
+        super(parent);
+    this.addTaskWakesUp = addTaskWakesUp;
+    this.maxPendingTasks = Math.max(16, maxPendingTasks);
+    this.executor = ThreadExecutorMap.apply(executor, this);
+    taskQueue = newTaskQueue(this.maxPendingTasks);
+    rejectedExecutionHandler = ObjectUtil.checkNotNull(rejectedHandler, "rejectedHandler");
 }
 ```
+1. **`executor`就是之前`NioEventLoopGroup`创建的`ThreadPerTaskExecutor`包装之后的对象**
+2. **`taskQueue`队列是用来存储提交过来的任务**
+3. **`rejectedExecutionHandler`是无法处理任务时的拒绝策略。**
 
-`initAndRegister`的执行逻辑如下：
 
 ```java
-final ChannelFuture initAndRegister() {
-    Channel channel = null;
+NioEventLoop(NioEventLoopGroup parent, Executor executor, SelectorProvider selectorProvider,
+                SelectStrategy strategy, RejectedExecutionHandler rejectedExecutionHandler,
+                EventLoopTaskQueueFactory queueFactory) {
+    super(parent, executor, false, newTaskQueue(queueFactory), newTaskQueue(queueFactory),
+            rejectedExecutionHandler);
+    this.provider = ObjectUtil.checkNotNull(selectorProvider, "selectorProvider");
+    this.selectStrategy = ObjectUtil.checkNotNull(strategy, "selectStrategy");
+    final SelectorTuple selectorTuple = openSelector();
+    this.selector = selectorTuple.selector;
+    this.unwrappedSelector = selectorTuple.unwrappedSelector;
+}
+
+private SelectorTuple openSelector() {
+    //1.创建默认的selector对象
+    final Selector unwrappedSelector;
     try {
-        channel = channelFactory.newChannel();
-        init(channel);
-    } catch (Throwable t) {
-        if (channel != null) {
-            channel.unsafe().closeForcibly();
-            return new DefaultChannelPromise(channel, GlobalEventExecutor.INSTANCE).setFailure(t);
-        }
-
-        return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
+        unwrappedSelector = provider.openSelector();
+    } catch (IOException e) {
+        throw new ChannelException("failed to open a new selector", e);
     }
 
-    ChannelFuture regFuture = config().group().register(channel);
-    if (regFuture.cause() != null) {
-        if (channel.isRegistered()) {
-            channel.close();
-        } else {
-            channel.unsafe().closeForcibly();
-        }
+    //DISABLE_KEY_SET_OPTIMIZATION:是否禁用优化，true:则采用原生selector运行
+    if (DISABLE_KEY_SET_OPTIMIZATION) {
+        return new SelectorTuple(unwrappedSelector);
     }
-    return regFuture;
+
+    //3.如果maybeSelectorImplClass不属于class或者实现类没有继承selector接口，则无法替换selectkey对象
+
+    //生成新的selectkey集合，内部采用数组实现
+    final SelectedSelectionKeySet selectedKeySet = new SelectedSelectionKeySet();
+
+    //替换原生selector的selectkey对象
+    selectedKeys = selectedKeySet;
+    logger.trace("instrumented a special java.util.Set into: {}", unwrappedSelector);
+    return new SelectorTuple(unwrappedSelector,
+                                new SelectedSelectionKeySetSelector(unwrappedSelector, selectedKeySet));
 }
 ```
+`**openSelector`主要做了以下工作：**
+1. **创建默认的selector对象**
+2. **判断原生的selector是否能够被替换**
+3. **如果能替换则使用`SelectedSelectionKeySet`替换selector对象中的`selectedKeys`和`publicSelectedKeys`字段**
+
+替换主要是基于性能考虑：
+
+原生`selectedKeys`是采用的`HashSet`,极端情况下，添加操作的时间复杂度是 O(n)
+
+`netty`则采用了数组重新生成了新的`selectedKeys`，时间复杂度始终为 O(1)
 
 
+# 二. 启动
 
-我们重点关注下`init`方法
+后续代码启动的逻辑，我们从下面的代码入手：
+>  bootstrap.bind(30000)
+
+最后会调用`AbstractBootStrip`的`doBind()`,`doBind`主要做了以下两件事：
+1. `initAndRegister`
+2. `doBind0`
+
+## 1. initAndRegister
+
+### 1. 初始化通道
+
+1.1 设置Tcp相关参数
+
+    >  setChannelOptions(channel, newOptionsArray(), logger);
+
+1.2 设置netty相关参数
+
+    > setAttributes(channel, attrs0().entrySet().toArray(EMPTY_ATTRIBUTE_ARRAY));
+
+1.3 调用`pipeline`的`addLast`添加`ChannelInitializer`,在`ChannelInitializer`的`initChannel`中会添加`ServerBootstrapAcceptor`对象。
+
+**第一次调用pipeline的addLast方法**
+
+### 2. 注册通道
 
 ```java
-@Override
-void init(Channel channel) {
-    //设置tcp相关参数
-    setChannelOptions(channel, newOptionsArray(), logger);
-    //设置相关业务参数
-    setAttributes(channel, attrs0().entrySet().toArray(EMPTY_ATTRIBUTE_ARRAY));
+ //AbstractBootStrip.cs
+ ChannelFuture regFuture = config().group().register(channel);
+    |
+ //SingleThreadEventLoop.cs
+  promise.channel().unsafe().register(this, promise);
+```
 
-    ChannelPipeline p = channel.pipeline();
+此处调用`group`的`register`，而`group`会委托内部`next.register`,最终，实际执行在`SingleThreadEventLoop.register`中
 
-    //将上述tcp和业务相关参数拷贝到临时变量
-    final EventLoopGroup currentChildGroup = childGroup;
-    final ChannelHandler currentChildHandler = childHandler;
-    final Entry<ChannelOption<?>, Object>[] currentChildOptions;
-    synchronized (childOptions) {
-        currentChildOptions = childOptions.entrySet().toArray(EMPTY_OPTION_ARRAY);
+可以看到后续调用翻转了，主体对象变成了`channel.register`,`channel`使用内部类`unsafe`执行注冊。
+
+`AbstractChannel.AbstractUnsafe.register`如下：
+
+```java
+public final void register(EventLoop eventLoop, final ChannelPromise promise) {
+    ObjectUtil.checkNotNull(eventLoop, "eventLoop");
+    //1.是否已注册
+    if (isRegistered()) {
+        promise.setFailure(new IllegalStateException("registered to an event loop already"));
+        return;
     }
-    final Entry<AttributeKey<?>, Object>[] currentChildAttrs = childAttrs.entrySet().toArray(EMPTY_ATTRIBUTE_ARRAY);
+    //2.是否是NioEventLoop
+    if (!isCompatible(eventLoop)) {
+        promise.setFailure(
+                new IllegalStateException("incompatible event loop type: " + eventLoop.getClass().getName()));
+        return;
+    }
 
-    //在channelpipeline中添加ChannelInitializer，将上述临时变量传递给该Initializer用于处理tcp连接接入
-    p.addLast(new ChannelInitializer<Channel>() {
-        @Override
-        public void initChannel(final Channel ch) {
-            final ChannelPipeline pipeline = ch.pipeline();
-            ChannelHandler handler = config.handler();
-            if (handler != null) {
-                pipeline.addLast(handler);
-            }
-
-            ch.eventLoop().execute(new Runnable() {
+    AbstractChannel.this.eventLoop = eventLoop;
+    //3.如果在同一线程中，则直接执行，否则通过线程执行
+    if (eventLoop.inEventLoop()) {
+        register0(promise);
+    } else {
+        try {
+            eventLoop.execute(new Runnable() {
                 @Override
                 public void run() {
-                    pipeline.addLast(new ServerBootstrapAcceptor(
-                            ch, currentChildGroup, currentChildHandler, currentChildOptions, currentChildAttrs));
+                    register0(promise);
                 }
             });
+        } catch (Throwable t) {
+            
+            closeForcibly();
+            closeFuture.setClosed();
+            safeSetFailure(promise, t);
         }
-    });
+    }
 }
 ```
+上述注册流程如下：
+1. 判断是否已注册、是否是`NioEventLoop`,是则记录异常直接返回
+2. 执行：如果在同一线程中，则直接执行，否则通过线程执行
 
-在`initAndRegister`中可以看到如下调用
+我们关注下执行部分，执行分为以下部分
+1. 执行任务：eventLoop.execute 
+2. 任务执行逻辑：register0
 
-> ChannelFuture regFuture = config().group().register(channel);
+#### 1.eventLoop执行
+`eventLoop.execute``继续跟进至``SingleThreadEventLoop.execute`
 
-注意此方法是调用`MultithreadEventLoopGroup`的`register`方法
+`loop`的执行不是简单开线程执行，而是将所有任务扔到队列中，然后利用线程从队列中取出执行
 
 ```java
-public ChannelFuture register(Channel channel) {
-    return next().register(channel);
+private void execute(Runnable task, boolean immediate) {
+    boolean inEventLoop = inEventLoop();
+    //将任务添加进队列
+    addTask(task);
+    if (!inEventLoop) {
+        startThread();
+        if (isShutdown()) {
+            boolean reject = false;
+            try {
+                if (removeTask(task)) {
+                    reject = true;
+                }
+            } catch (UnsupportedOperationException e) {
+            }
+            if (reject) {
+                reject();
+            }
+        }
+    }
+
+    if (!addTaskWakesUp && immediate) {
+        wakeup(inEventLoop);
+    }
+}
+
+private void startThread() {
+    //加锁启动线程
+    if (state == ST_NOT_STARTED) {
+        if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {
+            boolean success = false;
+            try {
+                doStartThread();
+                success = true;
+            } finally {
+                if (!success) {
+                    STATE_UPDATER.compareAndSet(this, ST_STARTED, ST_NOT_STARTED);
+                }
+            }
+        }
+    }
 }
 ```
 
-`next``实现是在其父类MultithreadEventExecutorGroup`中定义，即选择一个可用的`EventLoop`,`next`返回的类型是` ``SingleThreadEventLoop``:
+既然有生产任务的地方，就要有消费任务的地方，`doStartThread`就是 主要从队列中消费任务执行，主体逻辑如下：
+```java
+ private void doStartThread() {
+        assert thread == null;
+        executor.execute(new Runnable() {
+            //dosomething
+            this.run();
+    })
+ }
+```
+此处的`executor`实际运行时会调用前面我们初始化 生成的`ThreadPerTaskExecutor`对象，即每次执行都是new一个Thread执行
+`this.run` 实现在`NioEventLoop`中
 
 ```java
-@Override
-public EventExecutor next() {
-    return chooser.next();
+ protected void run() {
+        int selectCnt = 0;
+       for (;;) {
+            try {
+                int strategy;
+                try {
+                    //1. 选择合适的操作策略，是直接调用selectNow,还是直接处理队列任务
+                    strategy = selectStrategy.calculateStrategy(selectNowSupplier,hasTasks());
+  
+                  
+                selectCnt++;
+                cancelledKeys = 0;
+                needsToSelectAgain = false;
+                final int ioRatio = this.ioRatio;
+                boolean ranTasks;
+                if (ioRatio == 100) {
+                    try {
+                        if (strategy > 0) {
+                            processSelectedKeys();
+                        }
+                    } finally {
+                        // Ensure we always run tasks.
+                        ranTasks = runAllTasks();
+                    }
+                } else if (strategy > 0) {
+                    //此时有io事件，strategy=发生的事件数，由select返回
+                    final long ioStartTime = System.nanoTime();
+                    try {
+                        processSelectedKeys();
+                    } finally {
+                        // Ensure we always run tasks.
+                        final long ioTime = System.nanoTime() - ioStartTime;
+                        ranTasks = runAllTasks(ioTime * (100 - ioRatio) / ioRatio);
+                    }
+                } else {
+                    ranTasks = runAllTasks(0); // This will run the minimum number of tasks
+                }
+
+                if (ranTasks || strategy > 0) {
+                    if (selectCnt > MIN_PREMATURE_SELECTOR_RETURNS && logger.isDebugEnabled()) {
+                        logger.debug("Selector.select() returned prematurely {} times in a row for Selector {}.",
+                                selectCnt - 1, selector);
+                    }
+                    selectCnt = 0;
+                } else if (unexpectedSelectorWakeup(selectCnt)) { // Unexpected wakeup (unusual case)
+                    selectCnt = 0;
+                }
+            } catch (CancelledKeyException e) {
+                // Harmless exception - log anyway
+                if (logger.isDebugEnabled()) {
+                    logger.debug(CancelledKeyException.class.getSimpleName() + " raised by a Selector {} - JDK bug?",
+                            selector, e);
+                }
+            } catch (Throwable t) {
+                handleLoopException(t);
+            }
+            // Always handle shutdown even if the loop processing threw an exception.
+            try {
+                if (isShuttingDown()) {
+                    closeAll();
+                    if (confirmShutdown()) {
+                        return;
+                    }
+                }
+            } catch (Throwable t) {
+                handleLoopException(t);
+            }
+        }
+ }
+```
+重点关注下`run`方法的执行流程：
+
+1. 根据选择策略选择合适的操作：是直接调用selectNow还是继续下一个循环
+
+```
+有以下几种策略选择
+//应采用select阻塞等待io事件
+int SELECT = -1;
+//应继续loop循环检测，没有阻塞的select应直接采用
+int CONTINUE = -2;
+//在非阻塞的情况下循环检测io事件
+int BUSY_WAIT = -3;
+```
+
+
+
+`processSelectedKeys`可以采用原生`select`或优化后的`select`执行
+
+```
+private void processSelectedKeys() {
+    if (selectedKeys != null) {
+        processSelectedKeysOptimized();
+    } else {
+        processSelectedKeysPlain(selector.selectedKeys());
+    }
 }
 ```
 
-其中
+我们关注下`processSelectedKeysOptimized`的执行逻辑：
 
+1. 获取selectkey
+2. 根据selectkey获取channel，并处理channel
+3. 判断是否需要继续轮询
 
+继续跟踪至`processSelectedKey`：
 
-所以最终的`register`实现是在` ``SingleThreadEventLoop``中
+1. 如果是OP_CONNECT事件，则调用AbstractNioChannel.unsafe.finishConnect
+2. 入股是OP_WRITE，则调用`forceFlush`
+3. 如果是OP_READ，则调用read
 
-```java
-@Override
-public ChannelFuture register(final ChannelPromise promise) {
-    ObjectUtil.checkNotNull(promise, "promise");
-    promise.channel().unsafe().register(this, promise);
-    return promise;
-}
-```
+####  2. register0
 
-之后进入到`AbstractChannel.AbstractUnsafe`的`register`方法中
+`register0`虽然定义在`AbstractChannel`中，但是实际执行是在一个新的线程中
+`register0`调用`doRegister`方法，参见`AbstractNioChannel`,在这里完成了实际的注册
 
+并执行了
+>  pipeline.invokeHandlerAddedIfNeeded();
+>  callHandlerAddedForAllHandlers
 
+**private PendingHandlerCallback pendingHandlerCallbackHead;**
+该属性是在`pipiline`首次调用`addLast`时赋值的
+
+## 2. doBind0
 
 参考资料：
 
