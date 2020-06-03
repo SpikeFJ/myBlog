@@ -383,6 +383,8 @@ private void callHandlerCallbackLater(AbstractChannelHandlerContext ctx, boolean
 
 最终还是调用了 `channelContext`对应的`handle.handlerAdded`
 
+之所有不是立即执行，而是继承`runnable`,是因为触发`handlerAdd`必须等待`channel`注册成功后才能运行
+
 ### 2) 注册通道
 
 上述的初始化暂告一段落，回到通道注册上
