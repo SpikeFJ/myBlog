@@ -49,5 +49,7 @@ public void channelRead(ChannelHandlerContext ctx, Object msg) {
 }
 ```
 
-2. 数据传输
+后续的`register`流程和`bosswork`相同，不再赘述。
 
+
+从`bossGroup`传递过来的`channel`对象，在`workgroup`处会注册其`read/write`事件，即同一个`channel`贯穿 `bossGroup`和`workGroup`，在`bossGroup`处注册的是`accept`事件，在`workGroup`处注册的是`read/write`事件

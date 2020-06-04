@@ -418,6 +418,7 @@ public final void register(EventLoop eventLoop, final ChannelPromise promise) {
         return;
     }
 
+   //此处维护了channel和loop的关系，即channel包含loop引用
     AbstractChannel.this.eventLoop = eventLoop;
     //3.如果在同一线程中，则直接执行，否则通过线程执行
     //主要是为了保证I/O事件以及用户定义的I/O事件处理逻辑在一个线程中处理
@@ -656,7 +657,7 @@ private void register0(ChannelPromise promise) {
     }
 }
 protected void doRegister() throws Exception {
-	//....
+	//0表示仅仅是注册，不关注任何事件
    selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
 
  }
@@ -698,7 +699,7 @@ private static void doBind0(
 ## 
 
 参考资料：
-
+[Netty源码分析(前言, 概述及目录)](https://www.cnblogs.com/xiangnan6122/p/10202191.html)
 [自顶向下深入分析Netty](https://www.jianshu.com/nb/6812432)
 
 [Netty源码分析系列之NioEventLoop的创建与启动](https://zhuanlan.zhihu.com/p/98680222)
