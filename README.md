@@ -50,8 +50,10 @@
 
 # 有趣的
 * [punch-hole](Doc/Temp/Punch-hole.md)
-* [远程开关机](Doc/Temp/远程开关机.md)
+* [如何远程开关机](Doc/Temp/远程开关机.md)
 * [js利用零宽度字符串隐藏文件内容](Doc/Temp/javascript零宽度字符串隐藏.md)
+* [如何利用浏览器调用本地客户端程序](Doc/Temp/浏览器调用本地客户端程序.md)
+
 * 如何自己生成一个BitTorrent种子
 
 # 工作
@@ -70,4 +72,5 @@
 * [工作遇到的问题-spring配置](Doc/工作/Spring映射问题.md)
 * [web开发中的文件上传下载](Doc/Temp/web开发中的文件上传下载.md)
 * [数据库批量操作总结](Doc/Temp/数据库批量操作.md)
+* [删除大表的几种方式](Doc/Temp/删除大表的几种方式.md)
 * [C#开发windows服务](Doc/dotnet/windows-service.md)
