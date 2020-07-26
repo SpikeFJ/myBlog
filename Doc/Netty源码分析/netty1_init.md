@@ -1,9 +1,61 @@
 本篇继续分析`netty`的启动流程
 
+我们从`bootstrap.bind(30000)`入手,下面是代码流程：
 ```java
-bootstrap.bind(30000)
-```
+public ChannelFuture bind(SocketAddress localAddress) {
+    //1.首先进行参数校验
+    validate();
+    //2. 执行具体绑定
+    return doBind(ObjectUtil.checkNotNull(localAddress, "localAddress"));
+}
 
+public B validate() {
+    if (group == null) {
+        throw new IllegalStateException("group not set");
+    }
+    if (channelFactory == null) {
+        throw new IllegalStateException("channel or channelFactory not set");
+    }
+    return self();
+}
+
+
+private ChannelFuture doBind(final SocketAddress localAddress) {
+    final ChannelFuture regFuture = initAndRegister();
+    final Channel channel = regFuture.channel();
+    if (regFuture.cause() != null) {
+        return regFuture;
+    }
+
+    if (regFuture.isDone()) {
+
+        ChannelPromise promise = channel.newPromise();
+        doBind0(regFuture, channel, localAddress, promise);
+        return promise;
+    } else {
+
+        final PendingRegistrationPromise promise = new PendingRegistrationPromise(channel);
+        regFuture.addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                Throwable cause = future.cause();
+                if (cause != null) {
+
+                    promise.setFailure(cause);
+                } else {
+
+                    promise.registered();
+
+                    doBind0(regFuture, channel, localAddress, promise);
+                }
+            }
+        });
+        return promise;
+    }
+}
+
+
+```
 最后会调用`AbstractBootStrip`的`doBind()`,`doBind`主要做了以下两件事：
 
 1. `初始化并注册通道--initAndRegister`
@@ -16,7 +68,10 @@ final ChannelFuture initAndRegister() {
     //1.通道初始化
     Channel channel = null;
     try {
+        //1.反射生成 NioServerSocketChannel，对应启动类中.channel(NioServerSocketChannel.class)
+        //此处要注意  super(null, channel, SelectionKey.OP_ACCEPT);这行代码指明了serverChannel关注的操作
         channel = channelFactory.newChannel();
+        //2.初始化通道
         init(channel);
     } catch (Throwable t) {
         if (channel != null) {
@@ -39,8 +94,6 @@ final ChannelFuture initAndRegister() {
     return regFuture;
 }
 ```
-
-
 
 # 一. 初始化通道
 

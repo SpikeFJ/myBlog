@@ -262,8 +262,94 @@ private SelectorTuple openSelector() {
 
 # 二. 启动
 
-后续代码启动的逻辑，我们从下面的代码入手：
->  bootstrap.bind(30000)
+后续代码启动的逻辑，我们从`bootstrap.bind(30000)`入手,下面是代码流程：
+```java
+public ChannelFuture bind(SocketAddress localAddress) {
+    //1.首先进行参数校验
+    validate();
+    //2. 执行具体绑定
+    return doBind(ObjectUtil.checkNotNull(localAddress, "localAddress"));
+}
+
+public B validate() {
+    if (group == null) {
+        throw new IllegalStateException("group not set");
+    }
+    if (channelFactory == null) {
+        throw new IllegalStateException("channel or channelFactory not set");
+    }
+    return self();
+}
+
+
+private ChannelFuture doBind(final SocketAddress localAddress) {
+    final ChannelFuture regFuture = initAndRegister();
+    final Channel channel = regFuture.channel();
+    if (regFuture.cause() != null) {
+        return regFuture;
+    }
+
+    if (regFuture.isDone()) {
+        // At this point we know that the registration was complete and successful.
+        ChannelPromise promise = channel.newPromise();
+        doBind0(regFuture, channel, localAddress, promise);
+        return promise;
+    } else {
+        // Registration future is almost always fulfilled already, but just in case it's not.
+        final PendingRegistrationPromise promise = new PendingRegistrationPromise(channel);
+        regFuture.addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                Throwable cause = future.cause();
+                if (cause != null) {
+                    // Registration on the EventLoop failed so fail the ChannelPromise directly to not cause an
+                    // IllegalStateException once we try to access the EventLoop of the Channel.
+                    promise.setFailure(cause);
+                } else {
+                    // Registration was successful, so set the correct executor to use.
+                    // See https://github.com/netty/netty/issues/2586
+                    promise.registered();
+
+                    doBind0(regFuture, channel, localAddress, promise);
+                }
+            }
+        });
+        return promise;
+    }
+}
+
+
+final ChannelFuture initAndRegister() {
+    Channel channel = null;
+    try {
+        //1.反射生成 NioServerSocketChannel，对应启动类中.channel(NioServerSocketChannel.class)
+        //此处要注意  super(null, channel, SelectionKey.OP_ACCEPT);这行代码指明了serverChannel关注的操作
+        channel = channelFactory.newChannel();
+        //2.初始化通道
+        init(channel);
+    } catch (Throwable t) {
+        if (channel != null) {
+            // channel can be null if newChannel crashed (eg SocketException("too many open files"))
+            channel.unsafe().closeForcibly();
+            // as the Channel is not registered yet we need to force the usage of the GlobalEventExecutor
+            return new DefaultChannelPromise(channel, GlobalEventExecutor.INSTANCE).setFailure(t);
+        }
+        // as the Channel is not registered yet we need to force the usage of the GlobalEventExecutor
+        return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
+    }
+
+    ChannelFuture regFuture = config().group().register(channel);
+    if (regFuture.cause() != null) {
+        if (channel.isRegistered()) {
+            channel.close();
+        } else {
+            channel.unsafe().closeForcibly();
+        }
+    }
+    return regFuture;
+}
+
+```
 
 最后会调用`AbstractBootStrip`的`doBind()`,`doBind`主要做了以下两件事：
 1. `初始化并注册通道--initAndRegister`
@@ -699,11 +785,13 @@ private static void doBind0(
 ## 
 
 参考资料：
-[Netty源码分析(前言, 概述及目录)](https://www.cnblogs.com/xiangnan6122/p/10202191.html)
-[自顶向下深入分析Netty](https://www.jianshu.com/nb/6812432)
 
-[Netty源码分析系列之NioEventLoop的创建与启动](https://zhuanlan.zhihu.com/p/98680222)
+1. [Netty源码分析(前言, 概述及目录)](https://www.cnblogs.com/xiangnan6122/p/10202191.html)
 
-[Netty 入门源码分析](https://www.cnblogs.com/rickiyang/p/12562408.html)
+2. [自顶向下深入分析Netty](https://www.jianshu.com/nb/6812432)
 
-[莫那·鲁道](https://www.cnblogs.com/stateis0/category/1206890.html)
+3. [Netty源码分析系列之NioEventLoop的创建与启动](https://zhuanlan.zhihu.com/p/98680222)
+
+4. [Netty 入门源码分析](https://www.cnblogs.com/rickiyang/p/12562408.html)
+
+5. [莫那·鲁道](https://www.cnblogs.com/stateis0/category/1206890.html)

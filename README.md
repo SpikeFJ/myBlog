@@ -24,8 +24,10 @@
 * [netty源码分析1之通道初始化](Doc/Netty源码分析/netty1_init.md)
 * [netty源码分析2之通道绑定](Doc/Netty源码分析/netty1_bind.md)
 * [netty源码分析3之分发事件](Doc/Netty源码分析/netty2_work_group.md)
-# java算法与数据结构
+* [netty源码分析4之Decoder](Doc/Netty源码分析/netty3_codec.md)
+* [netty源码分析5之Decoder](Doc/Netty源码分析/netty3_codec_detail.md)
 
+# java算法与数据结构
 1. [算法背景介绍]
 2. [简单排序(冒泡、选择、插入)](./Doc/数据结构/data_structures_01.md)
 3. [栈和队列](./Doc/数据结构/data_structures_02.md)
@@ -41,7 +43,7 @@
 13. [图](./Doc/数据结构/data_structures_12.md)
 14. [带权图]
 15. [总结]
-- [手写LRU](./Doc/数据结构/LRU.md)
+16. [实战-手写LRU](./Doc/数据结构/LRU.md)
 
 # 任务调度
 1. [任务调度1](./Doc/任务调度/任务调度1.md)
