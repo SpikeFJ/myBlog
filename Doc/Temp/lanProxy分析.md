@@ -25,7 +25,24 @@
 proxy-`server`分为两个监听模块：`ProxyServerContainer`和`WebConfigContainer`
 
 1. `ProxyServerContainer`负责和`proxy-client`通讯
+
 2. `WebConfigContainer`负责对外提供`web`配置页面
+
+   
+
+分析proxy-server源码前遇到一个小的问题：
+
+在idea打开源码调试过程中`System.getProperties("user.dir")`获取的路径有问题，下图是我的项目结构
+
+![image-20200810192147995](https://i.loli.net/2020/08/10/Yc2KvnlebQd9OoC.png)
+
+`System.getProperties("user.dir")`期望值是：`D:\gitResource\tmp\lanproxy\proxy-server`
+
+但是返回的却是`D:\gitResource\tmp\lanproxy`,
+
+需要做如下配置
+
+![image-20200810192338625](https://i.loli.net/2020/08/10/Z85mQUIdErxcRpB.png)
 
 
 
