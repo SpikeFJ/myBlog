@@ -54,7 +54,7 @@
 3. [任务调度3-Xxl-job源码分析之执行器](./Doc/任务调度/任务调度3-Xxl-job源码分析之执行器.md)
 
 # 有趣的
-* [punch-hole](Doc/Temp/Punch-hole.md)
+* [punch-hole原理](Doc/Temp/Punch-hole.md)
 * [lanproxy分析](Doc/Temp/lanProxy分析.md)
 * [如何远程开关机](Doc/Temp/远程开关机.md)
 * [js利用零宽度字符串隐藏文件内容](Doc/Temp/javascript零宽度字符串隐藏.md)
@@ -64,7 +64,7 @@
 # 工作
 * [2020年中总结](Doc/工作/2020年中总结.md)
 * [XL工作复盘](Doc/工作/工作.md)
-* [XL工作-技术方向](Doc/工作/XL工作-编程语言.md)
+* [XL工作-编程语言](Doc/工作/XL工作-编程语言.md)
 * [XL工作-框架总结]
 * [XL工作-如何设计一个插件系统]
 * [XL工作-ORM-搜索器/筛选器]
