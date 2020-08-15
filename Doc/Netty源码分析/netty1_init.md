@@ -95,7 +95,7 @@ final ChannelFuture initAndRegister() {
 }
 ```
 
-# 一. 初始化通道
+# 一. 初始化通道（`init`）
 
 ```java
 void init(Channel channel) {
@@ -143,6 +143,7 @@ void init(Channel channel) {
 public final ChannelPipeline addLast(EventExecutorGroup group, String name, ChannelHandler handler) {
     final AbstractChannelHandlerContext newCtx;
     synchronized (this) {
+        //检查是否多次添加handler，没有添加@Sharable特性且已经添加过的handler给出异常提示
         checkMultiplicity(handler);
 
         //将handle对象包装成一个DefaultChannelHandlerContext对象，DefaultChannelHandlerContext既持有pipeline又包含handle，所以说它是两者的通讯桥梁
@@ -151,7 +152,7 @@ public final ChannelPipeline addLast(EventExecutorGroup group, String name, Chan
         //加入到链表中
         addLast0(newCtx);
 
-        //如果通道尚未注册，则添加一个延迟add任务
+        //如果通道尚未注册，则添加一个延迟任务,用于调用callHandlerAdded0
         if (!registered) {
             newCtx.setAddPending();
             callHandlerCallbackLater(newCtx, true);
@@ -197,7 +198,62 @@ private void callHandlerCallbackLater(AbstractChannelHandlerContext ctx, boolean
 
 最终还是调用了 `channelContext`对应的`handle.handlerAdded`
 
-# 二. 注册通道
+
+
+至此我们知道了`handlerAdded`的方法是在往`pipeline`首次添加且在已注册的情况下调用的
+
+我们关注下`ChannelInitializer`作为一种特殊的`handler`，其`handlerAdded`实现如下：
+
+```java
+public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+    if (ctx.channel().isRegistered()) {
+        if (initChannel(ctx)) {
+            removeState(ctx);
+        }
+    }
+}
+ public final void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        // Normally this method will never be called as handlerAdded(...) should call initChannel(...) and remove
+        // the handler.
+        if (initChannel(ctx)) {
+            // we called initChannel(...) so we need to call now pipeline.fireChannelRegistered() to ensure we not
+            // miss an event.
+            ctx.pipeline().fireChannelRegistered();
+
+            // We are done with init the Channel, removing all the state for the Channel now.
+            removeState(ctx);
+        } else {
+            // Called initChannel(...) before which is the expected behavior, so just forward the event.
+            ctx.fireChannelRegistered();
+        }
+    }
+ private boolean initChannel(ChannelHandlerContext ctx) throws Exception {
+        if (initMap.add(ctx)) { // Guard against re-entrance.
+            try {
+                initChannel((C) ctx.channel());
+            } catch (Throwable cause) {
+                // Explicitly call exceptionCaught(...) as we removed the handler before calling initChannel(...).
+                // We do so to prevent multiple calls to initChannel(...).
+                exceptionCaught(ctx, cause);
+            } finally {
+                ChannelPipeline pipeline = ctx.pipeline();
+                if (pipeline.context(this) != null) {
+                    pipeline.remove(this);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+```
+
+可以看到`initChannel`是在`handlerAdded`或`channelRegistered`方法触发时候调用，且调用后删除自身，
+
+（正常情况是有`handlerAdded`调用`initChannel`）
+
+因为`ChannelInitializer`自身只是作为多个`handler`注册的一种途径，当`initChannel`触发后，就完成自身使命，可以安静消失了
+
+# 二. 注册通道(`register`)
 
 上述的初始化暂告一段落，回到通道注册上
 

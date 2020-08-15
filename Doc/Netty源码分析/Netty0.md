@@ -11,7 +11,8 @@ EventLoopGroup workerGroup = new NioEventLoopGroup();
 try {
     ServerBootstrap b = new ServerBootstrap();
     b.group(bossGroup, workerGroup)
-        //2.指定channel对象
+        //2.指定channel对象，此处channel方法会new ReflectiveChannelFactory(NioServerSocketChannel.class)对象
+        //会调用NioServerSocketChannel无参构造函数
         .channel(NioServerSocketChannel.class)
         //3.bossGroup处理器
         .handler(new LoggingHandler(LogLevel.INFO))
