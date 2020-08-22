@@ -1,12 +1,11 @@
 最近发现了一款比较好的内网映射工具-[`lanproxy`](https://github.com/ffay/lanproxy),
 
-采用 java 开发，源码质量很高，而且作者源码开放后的商业化操作也值得借鉴。
+采用 java 开发，源码质量很高
 
 至于内网映射是什么，有什么应用场景，这里就不介绍了。`lanproxy`官网都有介绍
 
 # 一. 结构图
-
-![image-20200810123158046](https://i.loli.net/2020/08/10/DCaVH893ulAOqTX.png)连接流程图：
+连接流程图：
 
 ![image-20200810150605359](https://i.loli.net/2020/08/10/SZyABEHaTrnObhG.png)
 
