@@ -195,7 +195,88 @@ Node reverse2(Node node) {
 
 # 三.非递归实现
 
+非递归采用`pre`，`cur`两个指针，
+
+每次将`cur.next`指向`pre`，
+
+```java
+/**
+ * 采用非递归方式
+ */
+private void reverseWithDoublePoint() {
+
+    if (head.next == null) {
+        System.out.println("没有元素");
+        return;
+    }
+    if (head.next.next == null) {
+        System.out.println("只有一个元素");
+        return;
+    }
+
+    Node pre = head.next;
+    Node cur = pre.next;
+
+    //第一个元素会转变为最后一个元素，所以指向为null，后续的元素会指向前一个元素
+    pre.next = null;
+
+    while (cur != null) {
+        //cur的next元素后面需要指向前一个元素，所以需要将next暂存
+        Node tmp = cur.next;
+
+        cur.next = pre;
+
+        pre = cur;
+        cur = tmp;
+    }
+    head.next = pre;
+}
+```
+
+# 四.扩展
+
+## 1. 两个链表是否有相交的节点
+
+首先需要知道两个链表的长度，两种方式：
+
+1. 链表中包含`size`属性，每次`add`更新该元素
+2. 递归调用，查询长度
 
 
 
+用长链表减去短链表得出`diff=len2-len1`,短链表首先偏移`diff`，然后两个链表元素逐个比较
+
+
+
+## 2. 单个链表是否有环
+
+采用快慢指针
+
+```java
+public Node checkCycle() {
+    Node slow = head;
+    Node fast = head;
+
+    while (fast != null && fast.next != null) {
+        //快指针每次2格
+        fast = fast.next.next;
+        //慢指针每次一格
+        slow = slow.next;
+        
+        //链表结束，没有环
+        if (fast == null) {
+            return null;
+        }
+
+        //相遇，有环
+        if (slow == fast) {
+            return slow;
+        }
+    }
+    //链表结束，没有环
+    return null;
+}
+```
+
+关于链表环可以衍生出很多有趣的题目，大脑暂时不够用，算了，略。
 
