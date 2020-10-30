@@ -71,6 +71,7 @@ bootStrip.Start()
                                         、C:\workspace\Tomcat9\webapps、及下面的文件夹
                                 deployDirectories
 
+						------->deployApps后，会调用host.addChild,此处ContainBase会判断child是否已启动，没有启动则启动，此刻走到standardContext的启动流程
                                
             ----->executor.start()
             ----->mapperListener.start()
@@ -79,3 +80,11 @@ bootStrip.Start()
     ----->所有继承ContainBase的类都会通过线程池FtureTask启动
     ----->StandardHost的StartInternal方法，fireEvent启动，init、start
     ----->StandardContext的start方法： setResources(new StandardRoot(this));
++++++++++++++++++
+
+Tomcat主要分为：Connector和Container
+
+Container 可以从启动和运行两个方面分析
+
+启动时，Container在生命管理周期中运行init、start等方法
+运行时，Container则通过每个子容器的Pipeline上的valve，且basicValve传递给下一个容器，最终StandardWrapper执行FilterChain,进而调用servlet
